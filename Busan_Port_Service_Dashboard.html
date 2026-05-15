@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>BUSAN PORT SERVICE DASHBOARD — 高麗海運ジャパン</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",BlinkMacSystemFont,"Segoe UI",sans-serif;background:#EEF2F7;color:#1E293B;font-size:13px;line-height:1.5}
 
-/* ===== LOGIN ===== */
+/* LOGIN */
 #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#EEF2F7}
 .login-card{background:#fff;border-radius:16px;padding:44px 40px 36px;max-width:400px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.12)}
 .login-kmtc-badge{display:inline-block;background:#0D2D5C;color:#F0A500;font-size:22px;font-weight:900;padding:8px 22px;border-radius:8px;border:2px solid #F0A500;letter-spacing:.06em;margin-bottom:16px}
@@ -22,7 +22,7 @@ body{font-family:-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Go
 .login-note{font-size:10px;color:#94A3B8;line-height:1.7;border-top:1px solid #F1F5F9;padding-top:16px;margin-top:8px}
 #login-error{display:none;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:8px 12px;font-size:11px;color:#DC2626;margin-top:12px;text-align:left}
 
-/* ===== DASHBOARD ===== */
+/* DASHBOARD */
 #dashboard{display:none}
 
 /* Header */
@@ -35,15 +35,17 @@ body{font-family:-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Go
 .hdr-logout{background:transparent;color:#CBD5E1;border:1px solid rgba(255,255,255,.25);border-radius:5px;padding:4px 12px;font-size:11px;cursor:pointer;font-family:inherit;transition:all .15s}
 .hdr-logout:hover{background:rgba(255,255,255,.1);color:#fff}
 
-/* Tab / control bar */
+/* Tab / ctrl bar */
 .ctrl-bar{background:#fff;border-bottom:1px solid #E2E8F0;position:sticky;top:52px;z-index:100;box-shadow:0 1px 6px rgba(0,0,0,.06)}
-.tab-row{display:flex;align-items:center;padding:0 24px;gap:0}
-.top-tab{padding:12px 20px;font-size:13px;cursor:pointer;color:#64748B;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;font-family:inherit;font-weight:600;white-space:nowrap;transition:all .15s;flex-shrink:0}
+.tab-row{display:flex;align-items:center;padding:0 24px;gap:0;overflow-x:auto}
+.top-tab{padding:12px 16px;font-size:12px;cursor:pointer;color:#64748B;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;font-family:inherit;font-weight:600;white-space:nowrap;transition:all .15s;flex-shrink:0}
 .top-tab:hover:not(.active){color:#334155;background:#F8FAFC}
 .top-tab.active{color:#0D2D5C;border-bottom-color:#0D2D5C;font-weight:700}
 .top-tab.tab-kmtc{color:#15803D}
 .top-tab.tab-kmtc.active{color:#15803D;border-bottom-color:#15803D}
-.tab-right{margin-left:auto;display:flex;align-items:center;gap:8px;padding-right:4px}
+.top-tab.tab-map{color:#0F766E}
+.top-tab.tab-map.active{color:#0F766E;border-bottom-color:#0F766E}
+.tab-right{margin-left:auto;display:flex;align-items:center;gap:8px;padding-right:4px;flex-shrink:0}
 .sz-label{font-size:10px;color:#94A3B8;font-weight:600}
 .sz-btn{padding:3px 10px;font-size:11px;border:1px solid #CBD5E1;border-radius:4px;cursor:pointer;background:#fff;color:#475569;font-family:inherit;font-weight:600;transition:all .15s}
 .sz-btn.on{background:#0D2D5C;border-color:#0D2D5C;color:#fff}
@@ -66,10 +68,11 @@ body{font-family:-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Go
 .main{padding:20px 24px}
 .panel{display:none}.panel.active{display:block}
 
-/* KPI row */
+/* KPI */
 .kpi-row{display:grid;gap:12px;margin-bottom:16px}
 .kpi-row.col5{grid-template-columns:repeat(5,1fr)}
 .kpi-row.col4{grid-template-columns:repeat(4,1fr)}
+.kpi-row.col3{grid-template-columns:repeat(3,1fr)}
 .kpi-card{background:#fff;border-radius:10px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:4px solid #CBD5E1}
 .kpi-card.navy{border-left-color:#0D2D5C}
 .kpi-card.amber{border-left-color:#F0A500}
@@ -81,15 +84,10 @@ body{font-family:-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Go
 .kpi-sub{font-size:10px;color:#94A3B8;margin-top:4px}
 
 /* Cards */
-.card{background:#fff;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:16px}
+.card{background:#fff;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.06);padding:16px;margin-bottom:14px}
 .card-title{font-size:11px;font-weight:700;color:#0D2D5C;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #EEF2F7;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:8px}
 .card-title .badge{background:#0D2D5C;color:#fff;font-size:9px;padding:2px 8px;border-radius:3px;font-weight:700;letter-spacing:.04em}
 .card-title .badge-g{background:#15803D}
-
-/* Grids */
-.g2{display:grid;grid-template-columns:60% 1fr;gap:14px;margin-bottom:14px}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
-.g2e{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
 
 /* Result strip */
 .result-strip{font-size:11px;color:#64748B;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:16px}
@@ -107,13 +105,11 @@ tbody tr:hover td{background:#F8FAFC}
 .r-kmtc td{background:#F0FDF4!important}
 .r-kmtc:hover td{background:#DCFCE7!important}
 
-/* Badges / tags */
+/* Badges */
 .trade-tag{display:inline-block;padding:2px 7px;border-radius:3px;font-size:9px;font-weight:700}
 .kmtc-mk{display:inline-block;background:#0D2D5C;color:#F0A500;font-size:8px;font-weight:800;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle;border:1px solid #F0A500;letter-spacing:.04em}
-.rank1{display:inline-block;background:#F0A500;color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px}
-.rank-badge{display:inline-block;background:#E2E8F0;color:#475569;font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px}
 
-/* Progress bar */
+/* Progress */
 .prog-wrap{display:flex;align-items:center;gap:6px;min-width:80px}
 .prog-bg{flex:1;background:#E2E8F0;border-radius:3px;height:5px;overflow:hidden}
 .prog-fill{height:5px;border-radius:3px;background:#0D2D5C}
@@ -128,6 +124,7 @@ tbody tr:hover td{background:#F8FAFC}
 .sec-ttl{font-size:11px;font-weight:700;color:#0D2D5C;margin-bottom:10px;display:flex;align-items:center;gap:8px}
 .sec-badge{display:inline-block;padding:2px 10px;border-radius:3px;font-size:10px;font-weight:700;color:#fff;background:#0D2D5C;letter-spacing:.04em}
 .sec-badge.g{background:#15803D}
+.sec-badge.teal{background:#0F766E}
 
 /* KMTC banner */
 .kmtc-banner{background:linear-gradient(135deg,#064E3B 0%,#15803D 100%);border-radius:10px;padding:14px 20px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
@@ -151,9 +148,40 @@ body.sz-l{font-size:15px}
 body.sz-l .kpi-val{font-size:34px}
 body.sz-l th,body.sz-l td{padding:10px 12px;font-size:13px}
 
+/* ===== DEST TAB ===== */
+.dest-search-wrap{margin-bottom:12px}
+.dest-search{width:100%;max-width:480px;padding:10px 14px;border:2px solid #CBD5E1;border-radius:8px;font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}
+.dest-search:focus{border-color:#0D2D5C}
+.dest-chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px;max-height:200px;overflow-y:auto;padding:2px}
+.dest-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:99px;border:1.5px solid #CBD5E1;cursor:pointer;background:#fff;font-size:11px;font-weight:600;color:#475569;transition:all .12s;white-space:nowrap}
+.dest-chip:hover{background:#F1F5F9;border-color:#94A3B8}
+.dest-chip.active{background:#0D2D5C;border-color:#0D2D5C;color:#fff}
+.dest-chip .cnt{background:#E2E8F0;color:#475569;border-radius:99px;padding:1px 6px;font-size:9px;font-weight:700;margin-left:2px}
+.dest-chip.active .cnt{background:rgba(255,255,255,.25);color:#fff}
+.dest-selected-header{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.dest-selected-port{font-size:15px;font-weight:800;color:#1E3A8A}
+.dest-selected-meta{font-size:11px;color:#3B82F6;font-weight:600}
+
+/* ===== MAP TAB ===== */
+.map-panel-wrap{margin:-20px -24px;display:flex;height:calc(100vh - 250px);min-height:520px;border-top:1px solid #E2E8F0}
+#leaflet-map{flex:1;height:100%;z-index:0}
+.map-sidebar{width:360px;flex-shrink:0;background:#fff;border-left:1px solid #E2E8F0;display:flex;flex-direction:column;overflow:hidden}
+.map-sidebar-hdr{padding:10px 14px;background:#0D2D5C;color:#fff;flex-shrink:0}
+.map-sidebar-hdr h3{font-size:13px;font-weight:700}
+.map-sidebar-hdr p{font-size:10px;color:#93C5FD;margin-top:2px}
+.map-sidebar-body{flex:1;overflow-y:auto;padding:8px}
+.map-svc-item{padding:8px 10px;border-radius:6px;margin-bottom:4px;cursor:pointer;border:1.5px solid #E2E8F0;background:#fff;transition:all .12s}
+.map-svc-item:hover{background:#EEF2F7;border-color:#CBD5E1}
+.map-svc-item.active{background:#EFF6FF;border-color:#3B82F6}
+.map-svc-name{font-size:11px;font-weight:700;color:#0D2D5C;margin-bottom:2px}
+.map-svc-op{font-size:10px;color:#64748B}
+.map-svc-ships{font-size:10px;color:#0F766E;font-weight:600}
+.map-hint{padding:40px 20px;text-align:center;color:#94A3B8;font-size:12px;line-height:1.8}
+.map-hint-icon{font-size:32px;margin-bottom:8px}
+
 /* Responsive */
-@media(max-width:1100px){.g2{grid-template-columns:1fr}.g3{grid-template-columns:1fr 1fr}.kpi-row.col5{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:700px){.g2,.g3,.g2e{grid-template-columns:1fr}.kpi-row.col5,.kpi-row.col4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:1100px){.kpi-row.col5{grid-template-columns:repeat(3,1fr)}.map-sidebar{width:280px}}
+@media(max-width:700px){.kpi-row.col5,.kpi-row.col4{grid-template-columns:repeat(2,1fr)}.map-panel-wrap{flex-direction:column}.map-sidebar{width:100%;height:240px;border-left:none;border-top:1px solid #E2E8F0}}
 </style>
 </head>
 <body>
@@ -169,9 +197,7 @@ body.sz-l th,body.sz-l td{padding:10px 12px;font-size:13px}
       <strong>アクセス拒否</strong> — @ekmtc.com アカウント専用です。<br>他ドメインではログインできません。
     </div>
     <div class="login-note">
-      ※ ekmtc.com のGoogleアカウント専用<br>
-      他ドメインではログインできません<br>
-      BUSAN PORT SERVICE DASHBOARD — Confidential
+      ※ ekmtc.com のGoogleアカウント専用<br>他ドメインではログインできません<br>BUSAN PORT SERVICE DASHBOARD — Confidential
     </div>
   </div>
 </div>
@@ -195,13 +221,15 @@ body.sz-l th,body.sz-l td{padding:10px 12px;font-size:13px}
 <div class="ctrl-bar">
   <div class="tab-row">
     <button class="top-tab active" onclick="sw('ptop',this)">トップ</button>
+    <button class="top-tab" onclick="sw('pdest',this)">仕向地別</button>
     <button class="top-tab" onclick="sw('pregion',this)">地域別</button>
     <button class="top-tab" onclick="sw('pcarrier',this)">船社別</button>
     <button class="top-tab" onclick="sw('pterminal',this)">ターミナル</button>
     <button class="top-tab tab-kmtc" onclick="sw('pkmtc',this)">★ KMTC特集</button>
+    <button class="top-tab tab-map" onclick="sw('pmap',this)">🗺 マップ</button>
     <button class="top-tab" onclick="sw('plist',this)">全サービス一覧</button>
     <div class="tab-right">
-      <span class="sz-label">表示サイズ</span>
+      <span class="sz-label">文字</span>
       <button class="sz-btn" onclick="setSz('s',this)">小</button>
       <button class="sz-btn on" onclick="setSz('m',this)">中</button>
       <button class="sz-btn" onclick="setSz('l',this)">大</button>
@@ -215,7 +243,7 @@ body.sz-l th,body.sz-l td{padding:10px 12px;font-size:13px}
 </div>
 
 <!-- Filter bar -->
-<div class="filter-bar">
+<div class="filter-bar" id="filter-bar">
   <span class="filter-label">地域</span>
   <div id="region-pills" style="display:flex;flex-wrap:wrap;gap:5px"></div>
   <span class="filter-label" style="margin-left:12px">船社</span>
@@ -232,8 +260,7 @@ body.sz-l th,body.sz-l td{padding:10px 12px;font-size:13px}
     <option value="xxl">10,001 TEU〜</option>
   </select>
   <label class="f-toggle">
-    <input type="checkbox" id="chk-kmtc" onchange="applyFilters()">
-    KMTCのみ表示
+    <input type="checkbox" id="chk-kmtc" onchange="applyFilters()">KMTCのみ表示
   </label>
   <button class="pill" onclick="resetFilters()" style="margin-left:auto">✕ リセット</button>
 </div>
@@ -242,51 +269,28 @@ body.sz-l th,body.sz-l td{padding:10px 12px;font-size:13px}
 
 <!-- ===== TOP ===== -->
 <div id="ptop" class="panel active">
-
-  <!-- KPI -->
   <div class="kpi-row col5" style="margin-bottom:16px">
     <div class="kpi-card navy"><div class="kpi-label">総サービス数（絞込後）</div><div class="kpi-val" id="kv-total">263</div><div class="kpi-sub">BUSANコンテナ定期航路</div></div>
-    <div class="kpi-card teal"><div class="kpi-label">総投入隻数</div><div class="kpi-val" id="kv-ships">1,240</div><div class="kpi-sub">全サービス合計</div></div>
-    <div class="kpi-card green"><div class="kpi-label">KMTCサービス</div><div class="kpi-val" id="kv-kmtc" style="color:#15803D">44</div><div class="kpi-sub">関与サービス数</div></div>
-    <div class="kpi-card amber"><div class="kpi-label">カバー地域</div><div class="kpi-val" id="kv-regions" style="color:#D97706">15</div><div class="kpi-sub">Trade区分数</div></div>
-    <div class="kpi-card purple"><div class="kpi-label">最大船型</div><div class="kpi-val" id="kv-maxteu" style="color:#7C3AED">22,000</div><div class="kpi-sub">TEU（地中海航路）</div></div>
+    <div class="kpi-card teal"><div class="kpi-label">総投入隻数</div><div class="kpi-val" id="kv-ships">—</div><div class="kpi-sub">全サービス合計</div></div>
+    <div class="kpi-card green"><div class="kpi-label">KMTCサービス</div><div class="kpi-val" id="kv-kmtc" style="color:#15803D">—</div><div class="kpi-sub">関与サービス数</div></div>
+    <div class="kpi-card amber"><div class="kpi-label">カバー地域</div><div class="kpi-val" id="kv-regions" style="color:#D97706">—</div><div class="kpi-sub">Trade区分数</div></div>
+    <div class="kpi-card purple"><div class="kpi-label">最大船型</div><div class="kpi-val" id="kv-maxteu" style="color:#7C3AED">—</div><div class="kpi-sub">TEU</div></div>
   </div>
-
-  <!-- Result -->
   <div class="result-strip">
     <div id="result-count">表示中: <strong>263</strong> サービス（全263件中）</div>
-    <div style="font-size:10px;color:#94A3B8">ヘッダークリックで並び替え　|　KMTCサービスは緑色行</div>
+    <div style="font-size:10px;color:#94A3B8">ヘッダークリックで並び替え　|　KMTCは緑色行</div>
   </div>
-
-  <!-- Charts row 1 -->
-  <div class="g2">
-    <div class="card">
-      <div class="card-title"><span class="badge">地域別サービス数</span></div>
-      <div style="position:relative;height:280px"><canvas id="cRegion"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-title"><span class="badge">ターミナル別サービス数</span></div>
-      <div style="position:relative;height:280px"><canvas id="cTerminal"></canvas></div>
+  <!-- Region summary table -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title"><span class="badge">地域別サマリー</span></div>
+    <div class="tbl-wrap" style="margin-bottom:0">
+      <table>
+        <thead><tr><th>地域</th><th>サービス数</th><th style="min-width:100px">割合</th><th>投入隻数</th><th>KMTC</th><th>Alliance主要</th></tr></thead>
+        <tbody id="top-region-tbody"></tbody>
+      </table>
     </div>
   </div>
-
-  <!-- Charts row 2 -->
-  <div class="g3">
-    <div class="card">
-      <div class="card-title"><span class="badge">北港 vs 新港</span></div>
-      <div style="position:relative;height:200px"><canvas id="cPort"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-title"><span class="badge">本船TEU規模分布</span></div>
-      <div style="position:relative;height:200px"><canvas id="cTeu"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-title"><span class="badge">主要船社 Top10</span></div>
-      <div style="position:relative;height:200px"><canvas id="cCarrier"></canvas></div>
-    </div>
-  </div>
-
-  <!-- Table -->
+  <!-- Service table -->
   <div class="sec-ttl"><span class="sec-badge">サービス一覧</span><span style="font-size:10px;font-weight:400;color:#94A3B8">50件ずつ表示 / KMTCは緑色行</span></div>
   <div class="tbl-wrap">
     <table>
@@ -307,14 +311,22 @@ body.sz-l th,body.sz-l td{padding:10px 12px;font-size:13px}
   </div>
 </div><!-- /ptop -->
 
+<!-- ===== DEST ===== -->
+<div id="pdest" class="panel">
+  <div class="tab-inner">
+    <div class="sec-ttl"><span class="sec-badge teal">仕向地別サービス検索</span><span style="font-size:10px;font-weight:400;color:#94A3B8;margin-left:8px">Port Rotationから仕向地港を選択してサービスを絞り込み</span></div>
+    <div class="dest-search-wrap">
+      <input type="text" id="dest-search" class="dest-search" placeholder="港名で絞り込み（例: Shanghai, Yokohama）" oninput="filterDestChips()">
+    </div>
+    <div class="dest-chips" id="dest-chips"></div>
+    <div id="dest-result"></div>
+  </div>
+</div>
+
 <!-- ===== REGION ===== -->
 <div id="pregion" class="panel">
   <div class="tab-inner">
-    <div class="sec-ttl"><span class="sec-badge">地域別詳細分析</span></div>
-    <div class="g2e" style="margin-bottom:20px">
-      <div class="card"><div class="card-title"><span class="badge">地域別サービス数</span></div><div style="position:relative;height:380px"><canvas id="cRegionD"></canvas></div></div>
-      <div class="card"><div class="card-title"><span class="badge">地域別 投入隻数</span></div><div style="position:relative;height:380px"><canvas id="cRegionS"></canvas></div></div>
-    </div>
+    <div class="sec-ttl"><span class="sec-badge">地域別詳細</span></div>
     <div id="region-tables"></div>
   </div>
 </div>
@@ -323,10 +335,7 @@ body.sz-l th,body.sz-l td{padding:10px 12px;font-size:13px}
 <div id="pcarrier" class="panel">
   <div class="tab-inner">
     <div class="sec-ttl"><span class="sec-badge">船社・Alliance別分析</span></div>
-    <div class="g2e" style="margin-bottom:20px">
-      <div class="card"><div class="card-title"><span class="badge">主要Operators Top15</span></div><div style="position:relative;height:380px"><canvas id="cOps"></canvas></div></div>
-      <div class="card"><div class="card-title"><span class="badge">Alliance別 Top15</span></div><div style="position:relative;height:380px"><canvas id="cAlliance"></canvas></div></div>
-    </div>
+    <div class="g2e" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px" id="carrier-summary"></div>
     <div id="carrier-tbl"></div>
   </div>
 </div>
@@ -335,11 +344,6 @@ body.sz-l th,body.sz-l td{padding:10px 12px;font-size:13px}
 <div id="pterminal" class="panel">
   <div class="tab-inner">
     <div class="sec-ttl"><span class="sec-badge">BUSANターミナル別分析</span></div>
-    <div class="g3" style="margin-bottom:20px">
-      <div class="card"><div class="card-title"><span class="badge">ターミナル別サービス数</span></div><div style="position:relative;height:320px"><canvas id="cT1"></canvas></div></div>
-      <div class="card"><div class="card-title"><span class="badge">ターミナル別投入隻数</span></div><div style="position:relative;height:320px"><canvas id="cT2"></canvas></div></div>
-      <div class="card"><div class="card-title"><span class="badge">北港 vs 新港</span></div><div style="position:relative;height:320px"><canvas id="cT3"></canvas></div></div>
-    </div>
     <div id="terminal-tbl"></div>
   </div>
 </div>
@@ -351,21 +355,45 @@ body.sz-l th,body.sz-l td{padding:10px 12px;font-size:13px}
     <p>高麗海運（KMTC）が運航・共同配船するBUSAN発着全サービス一覧</p>
   </div>
   <div class="kpi-row col4" style="margin-bottom:16px">
-    <div class="kpi-card green"><div class="kpi-label">KMTC関与サービス数</div><div class="kpi-val" id="kk-total" style="color:#15803D">44</div><div class="kpi-sub">全263件中 16.7%</div></div>
+    <div class="kpi-card green"><div class="kpi-label">KMTC関与サービス数</div><div class="kpi-val" id="kk-total" style="color:#15803D">—</div><div class="kpi-sub">全263件中</div></div>
     <div class="kpi-card green"><div class="kpi-label">KMTC投入隻数</div><div class="kpi-val" id="kk-ships" style="color:#15803D">—</div><div class="kpi-sub">全航路合計</div></div>
-    <div class="kpi-card green"><div class="kpi-label">展開地域数</div><div class="kpi-val" id="kk-regions" style="color:#15803D">7</div><div class="kpi-sub">Trade区分</div></div>
+    <div class="kpi-card green"><div class="kpi-label">展開地域数</div><div class="kpi-val" id="kk-regions" style="color:#15803D">—</div><div class="kpi-sub">Trade区分</div></div>
     <div class="kpi-card green"><div class="kpi-label">最大投入船型</div><div class="kpi-val" id="kk-maxteu" style="color:#15803D">—</div><div class="kpi-sub">TEU</div></div>
   </div>
-  <div class="g2e" style="margin-bottom:16px">
-    <div class="card"><div class="card-title"><span class="badge badge-g">KMTC地域別サービス数</span></div><div style="position:relative;height:260px"><canvas id="cKR"></canvas></div></div>
-    <div class="card"><div class="card-title"><span class="badge badge-g">KMTCターミナル別</span></div><div style="position:relative;height:260px"><canvas id="cKT"></canvas></div></div>
+  <!-- KMTC region summary -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title"><span class="badge badge-g">地域別 KMTC展開状況</span></div>
+    <div class="tbl-wrap" style="margin-bottom:0"><table>
+      <thead><tr><th>地域</th><th>KMTC便数</th><th style="min-width:100px">割合</th><th>投入隻数</th><th>主なサービス</th></tr></thead>
+      <tbody id="kmtc-region-tbody"></tbody>
+    </table></div>
   </div>
-  <div class="sec-ttl"><span class="sec-badge g">KMTC全サービス一覧（44件）</span></div>
+  <div class="sec-ttl"><span class="sec-badge g">KMTC全サービス一覧</span><span id="kmtc-count-label" style="font-size:10px;font-weight:400;color:#64748B;margin-left:8px"></span></div>
   <div class="tbl-wrap">
     <table>
       <thead><tr><th>地域</th><th>セクター</th><th>Alliance</th><th>サービス名</th><th>隻数×TEU</th><th>港</th><th>ターミナル</th><th>Port Rotation</th><th>本船名</th></tr></thead>
       <tbody id="kmtc-tbody"></tbody>
     </table>
+  </div>
+</div>
+
+<!-- ===== MAP ===== -->
+<div id="pmap" class="panel">
+  <div class="map-panel-wrap">
+    <div id="leaflet-map"></div>
+    <div class="map-sidebar">
+      <div class="map-sidebar-hdr">
+        <h3 id="map-sidebar-title">港を選択してください</h3>
+        <p id="map-sidebar-sub">地図上の港マーカーをクリック</p>
+      </div>
+      <div class="map-sidebar-body" id="map-sidebar-body">
+        <div class="map-hint">
+          <div class="map-hint-icon">🗺</div>
+          地図上の港マーカーをクリックすると<br>その港に寄港するサービス一覧が表示されます。<br><br>
+          サービスをクリックすると<br>航路ルートが地図上に描画されます。
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -441,23 +469,165 @@ function showDB(email){
 }
 function signOut(){sessionStorage.removeItem('bpa_u');sessionStorage.removeItem('bpa_n');if(window.google)google.accounts.id.disableAutoSelect();location.reload();}
 
-/* ── DATA ── */
+/* DATA */
 const DATA=[{"no": 1, "trade": "China", "sector": "Korea-China", "alliance": "Gemini", "operators": "Maersk/Hapag-Lloyd", "service": "Asia Shuttle 4 (A04) / Bohai Shuttle 1 (BS1)", "ships_raw": "2 x 5700", "num_ships": 2, "teu_size": 5700, "port": "Busan New Port", "terminal": "PNC", "rotation": "Dalian,Xingang,Busan,Shanghai,Dalian", "ship_details": "SANTA RITA, 7154; SEASPAN RIO DE JANEIRO, 4250", "code": "A04", "is_kmtc": false}, {"no": 2, "trade": "China", "sector": "Korea-China", "alliance": "Coheung", "operators": "COSCO (Coheung)", "service": "Busan-Xingang Service (AK3)", "ships_raw": "1 x 4250", "num_ships": 1, "teu_size": 4250, "port": "Both", "terminal": "BNCT/HKTG", "rotation": "Busan,Xingang,Busan", "ship_details": "COSCO FOS, 4253", "code": "AK3", "is_kmtc": false}, {"no": 3, "trade": "China", "sector": "Korea-China", "alliance": "Coheung", "operators": "COSCO (Coheung)", "service": "Busan-Lianyungang-Qingdao Service (AK7)", "ships_raw": "1 x 1700", "num_ships": 1, "teu_size": 1700, "port": "Both", "terminal": "DGT/HKTG", "rotation": "Busan,Lianyungang,Qingdao,Busan", "ship_details": "LING YUN HE, 1702", "code": "AK4", "is_kmtc": false}, {"no": 4, "trade": "China", "sector": "Korea-China", "alliance": "Coheung", "operators": "COSCO (Coheung)", "service": "Busan-Shanghai-Ningbo Service (AK6)", "ships_raw": "1 x 1430", "num_ships": 1, "teu_size": 1430, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Busan,Ningbo,Shanghai,Busan", "ship_details": "SONG YUN HE, 1432", "code": "AK6", "is_kmtc": false}, {"no": 5, "trade": "China", "sector": "Korea-China", "alliance": "Coheung", "operators": "COSCO (Coheung)", "service": "Busan-Incheon-Shanghai Service (AK8)", "ships_raw": "1 x 1430", "num_ships": 1, "teu_size": 1430, "port": "Busan New Port", "terminal": "DGT", "rotation": "Busan,Incheon,Shanghai,Busan", "ship_details": "QI YUN HE, 1432", "code": "AK8", "is_kmtc": false}, {"no": 6, "trade": "China", "sector": "Korea-China", "alliance": "ONE / X-Press Feeders", "operators": "ONE / X-Press Feeders", "service": "Bohai Express 2 (BH2)", "ships_raw": "2 x 2090", "num_ships": 2, "teu_size": 2090, "port": "Busan New Port", "terminal": "HPNT", "rotation": "Busan,Xingang,Busan", "ship_details": "BIG GEORGE, 2474; SEOUL GLOW, 1713", "code": "BH2", "is_kmtc": false}, {"no": 7, "trade": "China", "sector": "Korea-China", "alliance": "ONE", "operators": "ONE", "service": "Bohai Express 3 (BH3)", "ships_raw": "1 x 1090", "num_ships": 1, "teu_size": 1090, "port": "Busan New Port", "terminal": "HPNT", "rotation": "Busan,Dalian,Busan", "ship_details": "CONSILIA, 1091", "code": "BH3", "is_kmtc": false}, {"no": 8, "trade": "China", "sector": "Korea-China", "alliance": "Dong Young", "operators": "Dong Young Shg", "service": "Busan Nanjing Service (BNJ)", "ships_raw": "1 x 830", "num_ships": 1, "teu_size": 830, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Nanjing,Zhangjiagang,Busan,Kwangyang,Nanjing", "ship_details": "HE YANG, 834", "code": "BNJ", "is_kmtc": false}, {"no": 9, "trade": "China", "sector": "Korea-China", "alliance": "Namsung", "operators": "Namsung Shipping", "service": "Busan Shanghai Ningbo service (BSN)", "ships_raw": "1 x 950", "num_ships": 1, "teu_size": 950, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Shanghai,Busan,Ulsan,Kwangyang,Ningbo,Shanghai", "ship_details": "PEGASUS GRACE, 952", "code": "BSN", "is_kmtc": false}, {"no": 10, "trade": "China", "sector": "Korea-China", "alliance": "Sinokor / Heung-A", "operators": "Sinokor", "service": "Bohai-Seto Service 1 (BSS1)", "ships_raw": "1 x 1810", "num_ships": 1, "teu_size": 1810, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Kwangyang,Dalian,Xingang,Busan,Kwangyang", "ship_details": "SAWASDEE SIRIUS, 1809", "code": "BSS1", "is_kmtc": false}, {"no": 11, "trade": "China", "sector": "Korea-China", "alliance": "Namsung", "operators": "Namsung Shipping", "service": "Busan Xingang Qingdao Service (BXQ)", "ships_raw": "1 x 1040", "num_ships": 1, "teu_size": 1040, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Ulsan,Kwangyang,Xingang,Busan", "ship_details": "STAR PIONEER, 1043", "code": "BXQ", "is_kmtc": false}, {"no": 12, "trade": "China", "sector": "China-Korea-Japan", "alliance": "CK Line / Pancon", "operators": "CK Line / Pancon", "service": "China-Japan 1 (CJ1) / China-Korea-Japan (CJ1) - China leg", "ships_raw": "2 x 1010", "num_ships": 2, "teu_size": 1010, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Ningbo,Shanghai,Busan,Niigata,Toyama,Kanazawa,Ulsan,Busan,Kwangyang,Ningbo", "ship_details": "SKY JADE, 1009; PANCON SUNSHINE, 1009", "code": "CJ1", "is_kmtc": false}, {"no": 13, "trade": "China", "sector": "China-Korea-Japan", "alliance": "CK Line / KMTC", "operators": "KMTC", "service": "Korea-North China-Japan service (CKJ) - China leg", "ships_raw": "2 x 1000", "num_ships": 2, "teu_size": 1000, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Xingang,Dalian,Pohang,Busan,Naoetsu,Toyama,Niigata,Ulsan,Busan,Xingang", "ship_details": "SKY FLOWER, 1009; SUNNY CLOVER, 1000", "code": "CKJ/CKJ1", "is_kmtc": true}, {"no": 14, "trade": "China", "sector": "Korea-China", "alliance": "SITC", "operators": "SITC", "service": "China Korea Shuttle (CKS1)", "ships_raw": "1 x 850", "num_ships": 1, "teu_size": 850, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Busan,Rizhao,Lianyungang,Qingdao,Busan", "ship_details": "FU TU LIAN XING, 847", "code": "CKS1", "is_kmtc": false}, {"no": 15, "trade": "China", "sector": "Korea-China", "alliance": "Sinokor", "operators": "Sinokor", "service": "China-Korea Express 1 (CKX1)", "ships_raw": "1 x 1060", "num_ships": 1, "teu_size": 1060, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Ulsan,Kwangyang,Ningbo,Busan", "ship_details": "HONGKONG VOYAGER, 1060", "code": "CKX1", "is_kmtc": false}, {"no": 16, "trade": "China", "sector": "Korea-China", "alliance": "KMTC", "operators": "KMTC", "service": "China Shuttle 2/Busan Lianyungang Qingdao service (CNS2/BLQ)", "ships_raw": "1 x 1000", "num_ships": 1, "teu_size": 1000, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Busan,Ulsan,Kwangyang,Lianyungang,Qingdao,Busan", "ship_details": "SUNNY ORCHID, 1000", "code": "CNS2", "is_kmtc": true}, {"no": 17, "trade": "China", "sector": "Korea-China", "alliance": "TSL", "operators": "TSL", "service": "Japan-Hong Kong-Taiwan North (JHTN)", "ships_raw": "2 x 1130", "num_ships": 2, "teu_size": 1130, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Hong Kong,Shekou,Xiamen,Osaka,Kobe,Busan,Kwangyang,Keelung,Kaohsiung,Hong Kong", "ship_details": "TS HAKATA, 1182; TS KOBE, 1081", "code": "JHTN", "is_kmtc": false}, {"no": 18, "trade": "China", "sector": "Korea-China", "alliance": "EAS Intl", "operators": "EAS International Shipping", "service": "Korea China Express 2 (KCE2) / Qingdao Pusan Express (QPX)", "ships_raw": "1 x 1680", "num_ships": 1, "teu_size": 1680, "port": "Both", "terminal": "BPTG/DGT", "rotation": "Busan,Kwangyang,Qingdao,Lianyungang,Busan", "ship_details": "EASLINE DALIAN, 1675", "code": "KCE2/QPX", "is_kmtc": false}, {"no": 19, "trade": "China", "sector": "Korea-China", "alliance": "Dongjin", "operators": "Dongjin Shipping", "service": "Korea China Japan (KCJ)", "ships_raw": "1 x 1000", "num_ships": 1, "teu_size": 1000, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Kwangyang,Ningbo,Shanghai,Hakata,Kitakyushu,Busan", "ship_details": "DONGJIN ENTERPRISE, 1003", "code": "KCJ", "is_kmtc": false}, {"no": 20, "trade": "China", "sector": "Korea-China", "alliance": "Sinotrans", "operators": "Sinotrans", "service": "Nanjing/Zhanjiagang-Korea (KCN1)", "ships_raw": "1 x 910", "num_ships": 1, "teu_size": 910, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Busan,Kwangyang,Nanjing,Zhangjiagang,Busan", "ship_details": "ZHONG WAI YUN NING BO, 907", "code": "KCN1", "is_kmtc": false}, {"no": 21, "trade": "China", "sector": "Korea-China", "alliance": "Sinotrans", "operators": "Sinotrans", "service": "Nanjing/Zhanjiagang-Korea (KCN2)", "ships_raw": "1 x 910", "num_ships": 1, "teu_size": 910, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Nanjing,Zhangjiagang,Busan,Nanjing", "ship_details": "ZHONG WAI YUN SHEN ZHEN, 907", "code": "KCN2", "is_kmtc": false}, {"no": 22, "trade": "China", "sector": "Korea-China", "alliance": "KMTC / Pan Ocean", "operators": "KMTC / Pan Ocean", "service": "New South China 2 (NSC2) / Korea Nansha Express (KNX)", "ships_raw": "3 x 1020", "num_ships": 3, "teu_size": 1020, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Incheon,Daesan,Kwangyang,Busan,Huangpu,Nansha,Shekou,Shantou,Incheon", "ship_details": "POS QINGDAO, 1019", "code": "KNX/NSC", "is_kmtc": true}, {"no": 23, "trade": "China", "sector": "Korea-China", "alliance": "Pan Continental", "operators": "Pan Continental", "service": "Korea-Qingdao Pusan (KQP)", "ships_raw": "1 x 1010", "num_ships": 1, "teu_size": 1010, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Busan,Kwangyang,Yantai,Qingdao,Busan", "ship_details": "PANCON VICTORY, 1009", "code": "KQP", "is_kmtc": false}, {"no": 24, "trade": "China", "sector": "Korea-China", "alliance": "Sinokor", "operators": "Sinokor", "service": "Korea-Qingdao service (KQS)", "ships_raw": "1 x 1810", "num_ships": 1, "teu_size": 1810, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Ulsan,Kwangyang,Qingdao,Busan", "ship_details": "SAWASDEE PACIFIC, 1809", "code": "KQS", "is_kmtc": false}, {"no": 25, "trade": "China", "sector": "Korea-China", "alliance": "KMTC / TSL / YM", "operators": "KMTC / TSL", "service": "Korea-Taiwan-Hong Kong service (KTH)", "ships_raw": "2 x 1750", "num_ships": 2, "teu_size": 1750, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Incheon,Busan,Kwangyang,Keelung,Taichung,Hong Kong,Kaohsiung,Taichung,Keelung,Kwangyang,Incheon", "ship_details": "TS QINGDAO, 1787; IBN AL ABBAR, 1560; TS NAGOYA, 1909", "code": "KTH", "is_kmtc": true}, {"no": 26, "trade": "China", "sector": "Korea-China", "alliance": "Sinokor", "operators": "Sinokor", "service": "Korea-Xingang service (KXS1)", "ships_raw": "1 x 1810", "num_ships": 1, "teu_size": 1810, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Ulsan,Kwangyang,Xingang,Busan", "ship_details": "SAWASDEE SHANGHAI, 1809", "code": "KXS1", "is_kmtc": false}, {"no": 27, "trade": "China", "sector": "Korea-China", "alliance": "Pan Ocean", "operators": "Pan Ocean", "service": "Korea-Qingdao service 2 (NBQ)", "ships_raw": "1 x 1810", "num_ships": 1, "teu_size": 1810, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Busan,Kwangyang,Qingdao,Gunsan,Busan", "ship_details": "POS HOCHIMINH, 1811", "code": "NBQ", "is_kmtc": false}, {"no": 28, "trade": "China", "sector": "Korea-China", "alliance": "Pan Ocean", "operators": "Pan Ocean", "service": "New Busan Shanghai (NBS)", "ships_raw": "1 x 1020", "num_ships": 1, "teu_size": 1020, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Busan,Kwangyang,Ningbo,Shanghai,Busan", "ship_details": "POS SHANGHAI, 1015", "code": "NBS", "is_kmtc": false}, {"no": 29, "trade": "China", "sector": "China-Korea-Japan", "alliance": "KMTC / Namsung", "operators": "KMTC / Namsung", "service": "New China Japan (NCJ) - China leg", "ships_raw": "3 x 1050", "num_ships": 3, "teu_size": 1050, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Busan,Ulsan,Kwangyang,Xingang,Qingdao,Busan,Shimizu,Onahama,Sendai,Kamaishi,Niigata,Sakaiminato,Busan", "ship_details": "SUNNY CANNA, 1000; STAR CLIPPER, 1043; SUNNY CAMELLIA, 1103", "code": "NCJ", "is_kmtc": true}, {"no": 30, "trade": "China", "sector": "China-Korea-Japan", "alliance": "Namsung / Dong Young", "operators": "Namsung / Dong Young", "service": "North China Korea (NCK) - China leg", "ships_raw": "2 x 910", "num_ships": 2, "teu_size": 910, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Incheon,Dalian,Yantai,Gunsan,Busan,Yokohama,Tokyo,Shimizu,Nagoya,Busan", "ship_details": "PREMIER, 818; PEGASUS PETA, 1009", "code": "NCK", "is_kmtc": false}, {"no": 31, "trade": "China", "sector": "China-Korea-Japan", "alliance": "KMTC / Namsung", "operators": "KMTC / Namsung", "service": "New China Qingdao (NCQ) - China leg", "ships_raw": "3 x 1050", "num_ships": 3, "teu_size": 1050, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Busan,Ulsan,Kwangyang,Qingdao,Dalian,Busan,Niigata,Akita,Tomakomai,Hachinohe,Sendai,Hitachinaka,Busan", "ship_details": "SUNNY VIOLET, 1000; STAR EXPRESS, 1043; SUNNY IVY, 1096", "code": "NCQ", "is_kmtc": true}, {"no": 32, "trade": "China", "sector": "Korea-China", "alliance": "CK Line", "operators": "CK Line", "service": "New China Service (NCS)", "ships_raw": "1 x 910", "num_ships": 1, "teu_size": 910, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Ulsan,Kwangyang,Shanghai,Ningbo,Busan", "ship_details": "SKY VICTORIA, 907", "code": "NCS", "is_kmtc": false}, {"no": 33, "trade": "China", "sector": "Korea-China", "alliance": "Sinokor / Namsung", "operators": "Sinokor", "service": "Nanjing Korea Express (NKX)", "ships_raw": "1 x 1080", "num_ships": 1, "teu_size": 1080, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Kwangyang,Nanjing,Zhangjiagang,Busan", "ship_details": "YANGTZE TRADER, 1080", "code": "NKX", "is_kmtc": false}, {"no": 34, "trade": "China", "sector": "Korea-China", "alliance": "Sinokor / Pan Ocean", "operators": "Sinokor / Pan Ocean", "service": "New South China (NSC)", "ships_raw": "2 x 1010", "num_ships": 2, "teu_size": 1010, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Incheon,Daesan,Kwangyang,Busan,Huangpu,Nansha,Shekou,Shantou,Incheon", "ship_details": "POS GUANGZHOU, 1019; SUNNY LILAC, 1000", "code": "NSC", "is_kmtc": false}, {"no": 35, "trade": "China", "sector": "Korea-China", "alliance": "Wuhan Xingang", "operators": "Wuhan Xingang Datong", "service": "Nanjing-Busan Service", "ships_raw": "1 x 560", "num_ships": 1, "teu_size": 560, "port": "Busan New Port", "terminal": "DGT", "rotation": "Nanjing,Taizhou,Busan,Nanjing", "ship_details": "HUA HANG HAN YA 6, 556", "code": "NTP", "is_kmtc": false}, {"no": 36, "trade": "China", "sector": "China-Korea-Japan", "alliance": "Namsung / KMTC", "operators": "Namsung / KMTC", "service": "New Tohoku Pendulum (NTP) - China leg", "ships_raw": "3 x 1010", "num_ships": 3, "teu_size": 1010, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Shanghai,Ningbo,Busan,Kawasaki,Hitachinaka,Sendai,Tomakomai,Ishikari,Sakata,Sakaiminato,Busan,Ulsan,Kwangyang,Shanghai", "ship_details": "STAR CHASER, 963; SUNNY DAISY, 1103; STAR RANGER, 963", "code": "NTP", "is_kmtc": true}, {"no": 37, "trade": "China", "sector": "Korea-China", "alliance": "YM / TSL / IAL", "operators": "YM / TSL / IAL", "service": "Pan-Asia Service (PAS)", "ships_raw": "3 x 2540", "num_ships": 3, "teu_size": 2540, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Moji,Hakata,Busan,Kwangyang,Keelung,Kaohsiung,Hong Kong,Shekou,Nansha,Ho Chi Minh City,Shekou,Xiamen,Moji", "ship_details": "INTERASIA ELEVATE, 2782; TS GUANGZHOU, 1909; YM CERTAINTY, 2940", "code": "PAS", "is_kmtc": false}, {"no": 38, "trade": "China", "sector": "Korea-China", "alliance": "Rong Shang Logistics", "operators": "Rong Shang Logistics", "service": "Busan-China service", "ships_raw": "1 x 1250", "num_ships": 1, "teu_size": 1250, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Taicang,Qingdao,Incheon,Busan,Taicang", "ship_details": "FU YU, 1006; HONG DA XIN 778, 1496", "code": "RSL", "is_kmtc": false}, {"no": 39, "trade": "China", "sector": "Korea-China", "alliance": "EAS Intl", "operators": "EAS International Shipping", "service": "Shanghai Pusan Express 1 (SPX1)", "ships_raw": "1 x 1730", "num_ships": 1, "teu_size": 1730, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Busan,Kwangyang,Ningbo,Shanghai,Busan", "ship_details": "EASLINE KWANGYANG, 1728", "code": "SPX1", "is_kmtc": false}, {"no": 40, "trade": "China", "sector": "Korea-China", "alliance": "EAS Intl", "operators": "EAS International Shipping", "service": "Shanghai Pusan Express 2 (SPX2)", "ships_raw": "1 x 710", "num_ships": 1, "teu_size": 710, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Busan,Kwangyang,Xingang,Dalian,Busan", "ship_details": "PROSRICH, 712", "code": "SPX2", "is_kmtc": false}, {"no": 41, "trade": "China", "sector": "Korea-China", "alliance": "Taicang Container Lines", "operators": "Taicang Container Lines", "service": "Kansai/Kyushu Service (TKX3/TJS1/TKU2/TPX1)", "ships_raw": "2 x 830", "num_ships": 2, "teu_size": 830, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Lianyungang,Dafeng,Nanjing,Taicang,Hakata,Moji,Osaka,Kobe,Hiroshima,Busan,Lianyungang,", "ship_details": "JI RUN, 585; K-PACIFIC, 868; JIANG YUAN YUAN DA, 1049", "code": "TCL", "is_kmtc": false}, {"no": 42, "trade": "China", "sector": "Korea-China", "alliance": "EAS Intl", "operators": "EAS International Shipping", "service": "Korea-China (Yantai/Xingang) (YNT)", "ships_raw": "1 x 1730", "num_ships": 1, "teu_size": 1730, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Busan,Kwangyang,Yantai,Xingang,Busan", "ship_details": "EASLINE OSAKA, 1730", "code": "TPX1/YNT", "is_kmtc": false}, {"no": 43, "trade": "China", "sector": "Korea-China", "alliance": "EAS Intl", "operators": "EAS International Shipping", "service": "Korea-China (Xingang/Dalian) (DLC)", "ships_raw": "1 x 1140", "num_ships": 1, "teu_size": 1140, "port": "Both", "terminal": "BPTG/DGT", "rotation": "Busan,Kwangyang,Xingang,Dalian,Busan", "ship_details": "EASLINE YANTAI, 1141", "code": "TPX2", "is_kmtc": false}, {"no": 44, "trade": "China", "sector": "Korea-China", "alliance": "ONE", "operators": "ONE", "service": "Xiamen-Kaohsiung Shuttle (XKS) - Loop 1", "ships_raw": "nan", "num_ships": 0, "teu_size": 0, "port": "Busan New Port", "terminal": "HJNC", "rotation": "Xiamen,Taichung,Kahsiung,Busan,Xiamen,Busan", "ship_details": "NYK PAULA, 2664; ARICA BRIDGE, 2553; EMMANUEL P, 4253", "code": "XKS1", "is_kmtc": false}, {"no": 45, "trade": "China", "sector": "Korea-China", "alliance": "ONE", "operators": "ONE", "service": "Xiamen-Kaohsiung Shuttle (XKS) - Loop 2", "ships_raw": "nan", "num_ships": 0, "teu_size": 0, "port": "Busan New Port", "terminal": "HJNC", "rotation": "Xiamen,Taichung,Kahsiung,Busan,Xiamen,Busan", "ship_details": "NYK PAULA, 2664; ARICA BRIDGE, 2553; GSL CHLOE, 2546", "code": "XKS2", "is_kmtc": false}, {"no": 46, "trade": "China", "sector": "China-Korea-Japan", "alliance": "Panstar", "operators": "Panstar", "service": "Trilateral Sea-highway PanStar Service (TSPS) - China leg", "ships_raw": "1 x 260", "num_ships": 1, "teu_size": 260, "port": "Busan North Port", "terminal": "Intergis", "rotation": "Busan,Shidao,Busan,Tokyo,Nagoya,Busan", "ship_details": "PANSTAR GENIE, 264", "code": "PAGE", "is_kmtc": false}, {"no": 47, "trade": "China", "sector": "Korea-China", "alliance": "Doowoo", "operators": "Doowoo", "service": "Busan-Dalian-Weihai", "ships_raw": "1 x 720", "num_ships": 1, "teu_size": 720, "port": "Busan North Port", "terminal": "Intergis", "rotation": "Busan,Dalian,Weihai,Busan", "ship_details": "YONG SHENG 158, 718", "code": "nan", "is_kmtc": false}, {"no": 48, "trade": "China", "sector": "Korea-China", "alliance": "SoFast", "operators": "Sofast Shipping", "service": "Korea-China service 1", "ships_raw": "1 x 360", "num_ships": 1, "teu_size": 360, "port": "Busan North Port", "terminal": "Intergis", "rotation": "Busan,Kwangyang,Qingdao,Weihai,Busan", "ship_details": "RUI NENG 8, 360", "code": "nan", "is_kmtc": false}, {"no": 49, "trade": "China", "sector": "Korea-China", "alliance": "NBOSCO", "operators": "NBOSCO", "service": "China-Japan-Korea Service (CKS)", "ships_raw": "1 x 1040", "num_ships": 1, "teu_size": 1040, "port": "Busan North Port", "terminal": "Intergis", "rotation": "Busan,Kwangyang,Shanghai,Ningbo,Jakarta,Surabaya,Ho Chi Minh City,Shanghai,Busan", "ship_details": "NEW MINGZHOU 16, 1042", "code": "nan", "is_kmtc": false}, {"no": 50, "trade": "E Africa", "sector": "E Africa", "alliance": "MSC", "operators": "MSC", "service": "Origami - Africa", "ships_raw": "10 x 5760", "num_ships": 10, "teu_size": 5760, "port": "Busan New Port", "terminal": "PNC", "rotation": "Tokyo,Yokohama,Yokkaichi,Nagoya,Busan,Ningbo,Singapore,Mombasa,Dar es Salaam,Singapore,Kaohsiung,Busan,Tokyo", "ship_details": "MSC MAGNITUDE VII, 6976; SUEZ CANAL, 5610; MSC CATHERINE VI, 6422; MSC TAURUS VII, 6492; MSC POLARIS, 4953; MSC TUXPAN V, 5060; MSC ANIELLO, 4056; MSC FLORIANA VI, 5652; MSC KALAMATA VII, 6644", "code": "ORIGAMI A", "is_kmtc": false}, {"no": 51, "trade": "ECSA", "sector": "FE-ECSA/LTAM", "alliance": "MSC", "operators": "MSC", "service": "CARIOCA service", "ships_raw": "16 x 9760", "num_ships": 16, "teu_size": 9760, "port": "Busan New Port", "terminal": "PNIT", "rotation": "Qingdao,Busan,Shanghai,Ningbo,Shekou,Singapore,Vizhinjam,Rio de Janeiro,Santos,Paranagua,Itapoa,Itajai,Buenos Aires,Rio Grande,Itajai,Navegantes,Paranagua,Santos,Rio de Janeiro,Walvis Bay,Hambantota,Hong Kong,Qingdao", "ship_details": "MSC PAMELA, 9178; MSC CATERINA, 8819; MSC YASHI B, 12217; MSC BIANCA, 11568; SANTA LORETTA, 9178; MSC CHLOE, 9411; CAPE AKRITAS, 11037; MSC MADHU B, 12217; MSC SOFIA PAZ, 9034; MSC PALAK, 9408; MSC NAOMI, 8819; NAVARINO, 8531; MSC RANIA VIII, 8400; MSC ELODIE, 8819", "code": "CRIOCA", "is_kmtc": false}, {"no": 52, "trade": "ECSA", "sector": "FE-ECSA/LTAM", "alliance": "HMM", "operators": "HMM", "service": "Far East - India - Latin America (FIL)", "ships_raw": "12 x 6950", "num_ships": 12, "teu_size": 6950, "port": "Busan New Port", "terminal": "HPNT", "rotation": "Busan,Shanghai,Ningbo,Shekou,Singapore,Kattupalli,Santos,Rio Grande,Paranagua,Navegantes,Singapore,Hong Kong,Busan", "ship_details": "HMM CLOVER, 8548; HYUNDAI FAITH, 8566; HMM JUNIPER, 8548; HMM PREMIUM, 5023; HYUNDAI FORCE, 8566; HYUNDAI HONGKONG, 6765; HMM JAKARTA, 6800; HYUNDAI GRACE, 4728; HMM PLATINUM, 5023", "code": "FIL", "is_kmtc": false}, {"no": 53, "trade": "ECSA", "sector": "FE-ECSA/LTAM", "alliance": "ONE / HMM", "operators": "ONE / HMM", "service": "Far East-Latin America 2/East Coast South America Express 2  (FL2/SX2)", "ships_raw": "13 x 5210", "num_ships": 13, "teu_size": 5210, "port": "Busan New Port", "terminal": "DGT", "rotation": "Shekou,Singapore,Rio Grande,Itapoa,Santos,Singapore,Hong Kong,Busan,Shekou", "ship_details": "MOL EARNEST, 5014; HYUNDAI DYNASTY, 4728; HMM INTEGRAL, 4728; HMM PRESTIGE, 5023; HMM PRIVILEGE, 5023; SEATTLE BRIDGE, 6350; ONE GEORGE WASHINGTON, 5624; NYK RUMINA, 4922; WIDE ALPHA, 5466; BANGKOK BRIDGE, 4432; HMM JAKARTA, 6800; REN JIAN 20, 4380", "code": "SX2", "is_kmtc": false}, {"no": 54, "trade": "ISC", "sector": "Indian subcontinent", "alliance": "CMA CGM / COSCO / KMTC / RCL / TSL / Unifeeder", "operators": "CMA CGM / COSCO / KMTC / RCL / Unifeeder", "service": "India East Coast Express (IEX) / Far East-Chennai Service (FCS) / Far East Madras Express (FME) / RCL Far East-Madras 3 (RFM3) / Far East-Chennai Express (IFX)", "ships_raw": "6 x 5840", "num_ships": 6, "teu_size": 5840, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Nanjing,Zhangjiagang,Busan,Kwangyang,Nanjing", "ship_details": "KMTC DELHI, 6477; NAVIOS BAHAMAS, 4360; ENSENADA, 5828; XIN TIAN JIN, 5668; TS KEELUNG, 7092; ESL DACHAN BAY, 5605", "code": "ACE", "is_kmtc": true}, {"no": 55, "trade": "ISC", "sector": "Indian subcontinent", "alliance": "COSCO / ESL / KMTC / TSL", "operators": "COSCO / KMTC / TSL", "service": "Far East India Express (FIX / AIS / KCIS)", "ships_raw": "6 x 5410", "num_ships": 6, "teu_size": 5410, "port": "Busan New Port", "terminal": "HJNC", "rotation": "Xingang,Dalian,Pohang,Busan,Naoetsu,Toyama,Niigata,Ulsan,Busan,Xingang", "ship_details": "KMTC NHAVA SHEVA, 4275; XIN CHANG SHU, 5688; KMTC MUNDRA, 6655; KMTC CHENNAI, 4275; KMTC MANILA, 4275; ESL KABIR, 5605; TS KELANG, 7092", "code": "AIS", "is_kmtc": true}, {"no": 56, "trade": "ISC", "sector": "Indian subcontinent", "alliance": "BTL / KMTC / Interasia / WH", "operators": "BTL / KMTC / Interasia / WH", "service": "China Chennai Service (CCS) / Far East Madras Service 2 (FME2) / China-India Service 5 (CI5)", "ships_raw": "6 x 3860", "num_ships": 6, "teu_size": 3860, "port": "Busan New Port", "terminal": "DGT", "rotation": "Busan,Ningbo,Zhapu,Hakata,Moji,Busan", "ship_details": "TIGER CHENNAI, 3158; KMTC JEBEL ALI, 4275; INTERASIA HORIZON, 4253; WAN HAI 522, 4255; WAN HAI 372, 3055; WAN HAI 521, 4178", "code": "CI5", "is_kmtc": true}, {"no": 57, "trade": "ISC", "sector": "Indian subcontinent", "alliance": "COSCO / OOCL / GSL", "operators": "COSCO / OOCL / GSL", "service": "China-India Express 3 (CIX3)", "ships_raw": "6 x 8020", "num_ships": 6, "teu_size": 8020, "port": "Busan New Port", "terminal": "BCT", "rotation": "Xingang,Dalian,Busan,Shanghai,Xiamen,Hong Kong,Shekou,Singapore,Colombo,Nhava Sheva,Pipavav,Port Klang,Singapore,Hong Kong,Xingang", "ship_details": "TORRANCE, 5514; XIN MEI ZHOU, 8533; OOCL HAMBURG, 8063; STRATFORD, 8533; OOCL TAIPEI, 8888; OOCL LUXEMBOURG, 8063; XIN MEI ZHOU, 8533", "code": "CIX3", "is_kmtc": false}, {"no": 58, "trade": "ISC", "sector": "Indian subcontinent", "alliance": "Maersk / X-Press", "operators": "Maersk / X-Press", "service": "Far East-Indian Subcontinent 3 (FI3)/North China-India West Coast X-Press (NWX)", "ships_raw": "6 x 6400", "num_ships": 6, "teu_size": 6400, "port": "Busan New Port", "terminal": "PNC", "rotation": "Qingdao,Xingang,Busan,Tanjung Pelepas,Port Klang,Nhava Sheva,Pipavav,Karachi,Mundra,Port Klang,Singapore,Qingdao", "ship_details": "X-PRESS CARINA, 7092; X-PRESS CASSIOPEIA, 7092; GSL GRANIA, 7847; X-PRESS PHOENIX, 7092; ESL MUNDRA, 6078; X-PRESS ODYSSEY, 4957; ZHONG GU NAN NING, 4636", "code": "FI3W", "is_kmtc": false}, {"no": 59, "trade": "ISC", "sector": "ISC-FE-WCNA", "alliance": "Premier Alliance", "operators": "ONE/YML", "service": "Pacific South 3 (PS3)", "ships_raw": "12 x 7970", "num_ships": 12, "teu_size": 7970, "port": "Busan New Port", "terminal": "HPNT", "rotation": "Nhava Sheva,Pipavav,Colombo,Port Klang,Singapore,Cai Mep,Haiphong,Yantian,Los Angeles,Oakland,Tokyo,Busan,Shanghai,Ningbo,Shekou,Singapore,Port Klang,Nhava Sheva", "ship_details": "MOL CELEBRATION, 8110; CONTI CONQUEST, 8073; YM UNANIMITY, 8626; CONTI CRYSTAL, 8073; EMERALD TOWER, 8772; NYK VESTA, 9012; YM MOBILITY, 6588; YM MATURITY, 6572; YM MILESTONE, 6588; YM UNICORN, 8626; ONE COMMITMENT, 8560; CONTI CONQUEST, 8073", "code": "PS3W", "is_kmtc": false}, {"no": 60, "trade": "ISC", "sector": "Indian subcontinent", "alliance": "Sinokor / GFS / TSL", "operators": "Global Feeder Shipping", "service": "Sinokor India Service 2 (SIS 2) / China Sub Continent (CSC) / Asia Indian Subcontinent 2 (AIS2)", "ships_raw": "5 x 5310", "num_ships": 5, "teu_size": 5310, "port": "Busan New Port", "terminal": "HJNC", "rotation": "Busan,Kwangyang,Shanghai,Ningbo,Shekou,Port Klang Westport,Nhava Sheva,Mundra,Karachi,Port Klang Westport,Busan", "ship_details": "ZHONG GU HANG ZHOU, 4636; ZHONG GU XI AN, 4636; ZHONG GU LAN ZHOU, 4636; ZHONG GU HANG ZHOU, 4636; MELBOURNE BRIDGE, 8030", "code": "SIS2", "is_kmtc": false}, {"no": 61, "trade": "ISC", "sector": "ISC & FE-Med", "alliance": "HMM", "operators": "HMM", "service": "Far East-India-Med (FIM) service", "ships_raw": "15 x 9190", "num_ships": 15, "teu_size": 9190, "port": "Busan New Port", "terminal": "HPNT", "rotation": "Busan,Shanghai,Ningbo,Shekou,Singapore,Nhava Sheva,Karachi,Mundra,Algeciras,Valencia,Barcelona,Genoa,Piraeus,Algeciras,Karachi,Mundra,Nhava Sheva,Kattupalli,Singapore,Dachan Bay,Busan", "ship_details": "SEASPAN BELLWETHER, 10010; HMM LEAF, 8548; SEASPAN BEAUTY, 10010; HMM FOREST, 8548; SEASPAN BRILLIANCE, 10010; HYUNDAI BRAVE, 8566; HMM OCEAN, 7700; SEASPAN BRIGHTNESS, 10010; HMM SAGE, 8548; HMM PROMISE, 11010; SEASPAN BREEZE, 10010; HMM LIME, 8548; HMM SKY, 7700; HMM GREEN, 8548; SEASPAN BELLWETHER, 10010", "code": "FIM", "is_kmtc": false}, {"no": 62, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Namsung", "operators": "Namsung Shipping", "service": "Busan-Japan 1 (BJ1)", "ships_raw": "1 x 1000", "num_ships": 1, "teu_size": 1000, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Hiroshima,Iyomishima,Matsuyama,Imabari,Iyomishima,Mizushima,Hakata,Busan", "ship_details": "STAR CHALLENGER, 1003", "code": "BJ1", "is_kmtc": false}, {"no": 63, "trade": "Japan", "sector": "Korea-Japan", "alliance": "KMTC/Namsung", "operators": "Namsung Shipping", "service": "Busan Japan Shuttle / Japan Shuttle 1 (BJS/JPS1)", "ships_raw": "2 x 1020", "num_ships": 2, "teu_size": 1020, "port": "Both", "terminal": "BCT/BPTS", "rotation": "Busan,Vladivostok,Busan", "ship_details": "STAR SKIPPER, 1043; SUNNY LAUREL, 1000", "code": "BJS/JPS1", "is_kmtc": true}, {"no": 64, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Namsung", "operators": "Namsung Shipping", "service": "Busan Keihin (BKH)", "ships_raw": "1 x 1000", "num_ships": 1, "teu_size": 1000, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Tokyo,Yokohama,Nagoya,Oita,Busan", "ship_details": "STAR VOYAGER, 1003", "code": "BKH", "is_kmtc": false}, {"no": 65, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Dongjin", "operators": "Dongjin Shipping", "service": "Busan Kanmon Service (BKS1)", "ships_raw": "1 x 730", "num_ships": 1, "teu_size": 730, "port": "Both", "terminal": "DGT/HKTG", "rotation": "Ningbo,Shanghai,Busan,Niigata,Toyama,Kanazawa,Ulsan,Busan,Kwangyang,Ningbo", "ship_details": "DONGJIN FIDES, 728", "code": "BKS1", "is_kmtc": false}, {"no": 66, "trade": "Japan", "sector": "Korea-Japan", "alliance": "X-Press Feeders", "operators": "X-Press Feeders", "service": "Busan Niigata Express (BNX)", "ships_raw": "1 x 640", "num_ships": 1, "teu_size": 640, "port": "Busan New Port", "terminal": "HJNC", "rotation": "Busan,Niigata,Akita,Toyama,Busan", "ship_details": "JIA DE, 644", "code": "BNX", "is_kmtc": false}, {"no": 67, "trade": "Japan", "sector": "Korea-Japan", "alliance": "X-Press Feeders", "operators": "X-Press Feeders", "service": "Busan Tomakomai X-Press (BTX)", "ships_raw": "1 x 1500", "num_ships": 1, "teu_size": 1500, "port": "Busan New Port", "terminal": "HJNC", "rotation": "Busan,Tomakomai,Busan", "ship_details": "YONG SHUN, 1498", "code": "BTX", "is_kmtc": false}, {"no": 68, "trade": "Japan", "sector": "China-Korea-Japan", "alliance": "CK Line / Pancon", "operators": "CK Line / Pancon", "service": "China-Japan 1 (CJ1) / China-Korea-Japan (CJ1) - Japan leg", "ships_raw": "2 x 1010", "num_ships": 2, "teu_size": 1010, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Ningbo,Shanghai,Busan,Niigata,Toyama,Kanazawa,Ulsan,Busan,Kwangyang,Ningbo", "ship_details": "SKY JADE, 1009; PANCON SUNSHINE, 1009", "code": "CJ1", "is_kmtc": false}, {"no": 69, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Pan Ocean", "operators": "Pan Ocean", "service": "China Japan Service (CJS)", "ships_raw": "1 x 700", "num_ships": 1, "teu_size": 700, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Kwangyang,Busan,Tokyo,Yokohama,Nagoya,Yokkaichi,Busan,Tokyo,Yokohama,Kwangyang", "ship_details": "POS YOKOHAMA, 702", "code": "CJS-E", "is_kmtc": false}, {"no": 70, "trade": "Japan", "sector": "China-Korea-Japan", "alliance": "CK Line / KMTC", "operators": "KMTC", "service": "Korea-North China-Japan service (CKJ) - Japan leg", "ships_raw": "2 x 1000", "num_ships": 2, "teu_size": 1000, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Xingang,Dalian,Pohang,Busan,Naoetsu,Toyama,Niigata,Ulsan,Busan,Xingang", "ship_details": "SKY FLOWER, 1009; SUNNY CLOVER, 1000", "code": "CKJ/CKJ1", "is_kmtc": true}, {"no": 71, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Dong Young / Pan Ocean", "operators": "Dong Young / Pan Ocean", "service": "Korea-Japan Hanshin 2 (DHS/HS2)", "ships_raw": "1 x 670", "num_ships": 1, "teu_size": 670, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Osaka,Kobe,Kwangyang,Busan,Osaka,Kobe,Busan", "ship_details": "HONOR GLORY, 706; HONOR OCEAN, 628", "code": "HS2", "is_kmtc": false}, {"no": 72, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Maersk", "operators": "Maersk", "service": "Intra-Asia service 5 (IA5)", "ships_raw": "7 x 1740", "num_ships": 7, "teu_size": 1740, "port": "Busan New Port", "terminal": "PNC", "rotation": "Shanghai,Busan,Moji,Dalian,Qingdao,Yokohama,Nagoya,Kobe,Shanghai,Ningbo,Shekou,Tanjung Pelepas,Thilawa,Yangon,Tanjung Pelepas,Tawau,General Santos,Davao,Cagayan de Oro,Shanghai", "ship_details": "MCC SHENZHEN, 1714; MTT SAPANGAR, 1762; NORDLEOPARD, 1756; AS SOPHIA, 1713; AS SERENA, 1713; AS SIMONE, 1762; ERASMUS ICON, 1740", "code": "IA5N", "is_kmtc": false}, {"no": 73, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Sinokor / Heung-A", "operators": "Heung-A", "service": "Imari-Shikoku Express (ISX)", "ships_raw": "1 x 710", "num_ships": 1, "teu_size": 710, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Hiroshima,Imabari,Matsuyama,Mizushima,Fukuyama,Busan", "ship_details": "PACIFIC BUSAN, 706", "code": "ISX", "is_kmtc": false}, {"no": 74, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Ehime", "operators": "Ehime", "service": "Islands Transversal Express (ITX)", "ships_raw": "2 x 1030", "num_ships": 2, "teu_size": 1030, "port": "Busan New Port", "terminal": "DGT", "rotation": "Kaohsiung,Naha,Yatsushiro,Busan,Matsuyama,Oita,Hososhima,Shibushi,Naha,Keelung,Taichung,Kaohsiung", "ship_details": "ITX HIGO, 1043; ITX EHIME, 1020", "code": "ITX", "is_kmtc": false}, {"no": 75, "trade": "Japan", "sector": "Korea-Japan", "alliance": "KMTC", "operators": "KMTC", "service": "Japan East Hanshin Service 1 (JEH1)", "ships_raw": "1 x 1100", "num_ships": 1, "teu_size": 1100, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Busan,Ulsan,Osaka,Kobe,Takamatsu,Tokuyama Kudamatsu,Oita,Iwakuni,Busan", "ship_details": "SUNNY CALLA, 1103", "code": "JEH1", "is_kmtc": true}, {"no": 76, "trade": "Japan", "sector": "Korea-Japan", "alliance": "KMTC", "operators": "KMTC", "service": "Japan East Keihin Service 2 (JEK2)", "ships_raw": "1 x 1040", "num_ships": 1, "teu_size": 1040, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Ulsan,Busan,Shimizu,Nagoya,Yokkaichi,Toyohashi,Ulsan", "ship_details": "WECAN, 1043", "code": "JEK2", "is_kmtc": true}, {"no": 77, "trade": "Japan", "sector": "Korea-Japan", "alliance": "ONE", "operators": "ONE", "service": "Japan Korea Express 2 (JK2)", "ships_raw": "1 x 1100", "num_ships": 1, "teu_size": 1100, "port": "Busan New Port", "terminal": "HJNC", "rotation": "Busan,Moji,Kobe,Osaka,Hakata,Busan", "ship_details": "ERASMUS FUTURE, 1096", "code": "JK2", "is_kmtc": false}, {"no": 78, "trade": "Japan", "sector": "Korea-Japan", "alliance": "ONE", "operators": "ONE", "service": "Japan Korea Shuttle (JKS1)", "ships_raw": "3 x 2740", "num_ships": 3, "teu_size": 2740, "port": "Busan New Port", "terminal": "HJNC", "rotation": "Busan,Tokyo,Nagoya,Kobe,Busan,Kobe,Nagoya,Tokyo,Busan", "ship_details": "ONE CLARA, 2664; ADDISON, 2824; AS CARLOTTA, 2742", "code": "JKS1", "is_kmtc": false}, {"no": 79, "trade": "Japan", "sector": "Korea-Japan", "alliance": "ONE", "operators": "ONE", "service": "Japan Korea Shuttle (JKS2)", "ships_raw": "3 x 2740", "num_ships": 3, "teu_size": 2740, "port": "Busan New Port", "terminal": "HJNC", "rotation": "Busan,Tokyo,Nagoya,Kobe,Busan,Kobe,Nagoya,Tokyo,Busan", "ship_details": "ONE CLARA, 2664; ADDISON, 2824; AS CARLOTTA, 2742", "code": "JKS1", "is_kmtc": false}, {"no": 80, "trade": "Japan", "sector": "Korea-Japan", "alliance": "KMTC", "operators": "KMTC", "service": "Japan Korea Service 2 (JKS2)", "ships_raw": "1 x 710", "num_ships": 1, "teu_size": 710, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Busan,Sakaiminato,Kanazawa,Tsuruga,Maizuru,Imari ware,Busan", "ship_details": "HONOR BRIGHT, 708", "code": "JKS2", "is_kmtc": true}, {"no": 81, "trade": "Japan", "sector": "Korea-Japan", "alliance": "KMTC", "operators": "KMTC", "service": "Japan Kyushu West (JKW)", "ships_raw": "1 x 340", "num_ships": 1, "teu_size": 340, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Busan, Shibushi, Satsuma Sendai, Kumamoto, Yatsushiro, Nagasaki, Busan", "ship_details": "SUNNY PALM, 342", "code": "JKW3", "is_kmtc": true}, {"no": 82, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Pan Continental", "operators": "Pan Continental Shipping", "service": "Japan 1 (JP1)/Japan 5 (JP5)", "ships_raw": "1 x 630", "num_ships": 1, "teu_size": 630, "port": "Both", "terminal": "BCT/HKTG", "rotation": "Ulsan,Busan,Hiroshima,Osaka,Kobe,Takamatsu,Mizushima,Ulsan", "ship_details": "HONOR VOYAGER, 634", "code": "JP1/JP5", "is_kmtc": false}, {"no": 83, "trade": "Japan", "sector": "SEA-Korea-Japan", "alliance": "ONE", "operators": "ONE", "service": "Japan Philippines service (JPH)) - Northbound", "ships_raw": "3 x 2590", "num_ships": 3, "teu_size": 2590, "port": "Busan New Port", "terminal": "HPNT", "rotation": "Busan,Nagoya,Yokkaichi,Shimizu,Tokyo,Yokohama,Osaka,Kobe,Busan,Manila,Busan", "ship_details": "LOS ANDES BRIDGE, 2553; ONE DANIELLA, 2664; SEABREEZE, 2553", "code": "JPHN", "is_kmtc": false}, {"no": 84, "trade": "Japan", "sector": "Korea-Japan", "alliance": "KMTC", "operators": "KMTC", "service": "Japan Setouchi Service 5 (JSS5)", "ships_raw": "1 x 730", "num_ships": 1, "teu_size": 730, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Busan, Iyomishima, Imabari, Matsuyama, Tokushima, Takamatsu, Mizushima, Busan", "ship_details": "SUNNY DAHLIA, 728", "code": "JSS5", "is_kmtc": true}, {"no": 85, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Sinokor / Heung-A", "operators": "Sinokor", "service": "Japan South West Service 1 (JSW1)", "ships_raw": "1 x 700", "num_ships": 1, "teu_size": 700, "port": "Both", "terminal": "BCT/BPTS", "rotation": "Busan,Tsuruga,Kanazawa,Maizuru,Busan", "ship_details": "PACIFIC NINGBO, 698", "code": "JSW1", "is_kmtc": false}, {"no": 86, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Sinokor / Heung-A", "operators": "Heung-A", "service": "Japan South West Service  2 (JSW2)", "ships_raw": "2 x 690", "num_ships": 2, "teu_size": 690, "port": "Both", "terminal": "BCT/BPTS", "rotation": "Busan,Niigata,Toyama,Kanazawa,Hamada,Busan,Okgye,Busan", "ship_details": "OSAKA VOYAGER, 694; VOSTOCHNY VOYAGER, 694", "code": "JSW2", "is_kmtc": false}, {"no": 87, "trade": "Japan", "sector": "Japan", "alliance": "Tangshan Hede", "operators": "Tangshan Hede", "service": "Jingtang-Weifang Japan 8 (JW8)", "ships_raw": "1 x 700", "num_ships": 1, "teu_size": 700, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Jingtang,Huanghua,Weifang,Busan,Osaka,Kobe,Moji,Hakata,Jingtang", "ship_details": "OSG BOSSTEC, 694; TANG SHAN GANG JI 1, 698", "code": "JWK", "is_kmtc": false}, {"no": 88, "trade": "Japan", "sector": "Korea-Japan", "alliance": "MSC", "operators": "MSC", "service": "KAGUYA", "ships_raw": "1 x 2210", "num_ships": 1, "teu_size": 2210, "port": "Busan New Port", "terminal": "PNIT", "rotation": "Busan,Kobe,Osaka,Hakata,Busan", "ship_details": "JULIE, 2207", "code": "KAGUYA", "is_kmtc": false}, {"no": 89, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Sinokor / Heung-A", "operators": "Heung-A", "service": "Korea Bohai Express (KBX)", "ships_raw": "1 x 1000", "num_ships": 1, "teu_size": 1000, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Ulsan,Kwangyang,Qingdao,Busan", "ship_details": "HEUNG-A JANICE, 1003", "code": "KBX", "is_kmtc": false}, {"no": 90, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Camellia", "operators": "Camellia Line", "service": "Japan-Korea Feeder 02 (KF02)", "ships_raw": "1 x 560", "num_ships": 1, "teu_size": 560, "port": "Busan New Port", "terminal": "HJNC", "rotation": "Busan,Moji,Hiroshima,Busan,Moji,Nakanoseki,Tokuyama Kudamatsu,Hiroshima,Busan", "ship_details": "MAGNA, 556", "code": "KF02", "is_kmtc": false}, {"no": 91, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Sinokor / Heung-A", "operators": "Heung-A", "service": "Keihin Express 1 (KHX1)", "ships_raw": "1 x 1000", "num_ships": 1, "teu_size": 1000, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Tokyo,Yokohama,Nagoya,Toyohashi,Ulsan,Busan", "ship_details": "HEUNG-A AKITA, 1003", "code": "KHX1", "is_kmtc": false}, {"no": 92, "trade": "Japan", "sector": "Korea-Japan", "alliance": "CK Line", "operators": "CK Line", "service": "Korea-Japan Hanshin (KJH)", "ships_raw": "1 x 720", "num_ships": 1, "teu_size": 720, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Busan,Incheon,Busan,Kobe,Osaka,Mizushima,Busan", "ship_details": "PACIFIC MONACO, 724", "code": "KJH", "is_kmtc": false}, {"no": 93, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Panstar", "operators": "Panstar", "service": "Korea Japan Hanshin Kehin (KJHK)", "ships_raw": "1 x 340", "num_ships": 1, "teu_size": 340, "port": "Busan New Port", "terminal": "DGT", "rotation": "Busan,Kobe,Tokyo,Yokohama,Nagoya,Busan", "ship_details": "JI PENG, 338", "code": "KJHK", "is_kmtc": false}, {"no": 94, "trade": "Japan", "sector": "Korea-Japan", "alliance": "CK Line / Taiyoung", "operators": "CK Line / Taiyoung", "service": "Korea Japan Service (KJS)/Korea Japan Keihin (KJK) Loop 2 (eastbound)", "ships_raw": "3 x 730", "num_ships": 3, "teu_size": 730, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Incheon,Busan,Shimizu,Tokyo,Yokohama,Nagoya,Busan,Incheon", "ship_details": "ATLANTIC BRIDGE, 724; VICTORY STAR, 708; TY INCHEON, 746", "code": "KJK/KJS", "is_kmtc": false}, {"no": 95, "trade": "Japan", "sector": "Korea-Japan", "alliance": "CK Line / Taiyoung", "operators": "CK Line / Taiyoung", "service": "Korea Japan Service (KJS)/Korea Japan Keihin (KJK) Loop 1 (westbound)", "ships_raw": "3 x 730", "num_ships": 3, "teu_size": 730, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Incheon,Busan,Wakayama,Tokyo,Yokohama,Chiba,Busan", "ship_details": "TY INCHEON, 746; ATLANTIC BRIDGE, 724; VICTORY STAR, 708", "code": "KJK/KJS", "is_kmtc": false}, {"no": 96, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Dongjin", "operators": "Dongjin Shipping", "service": "Korea Japan Keihin (KJK)", "ships_raw": "1 x 730", "num_ships": 1, "teu_size": 730, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Busan,Shimizu,Yokohama,Tokyo,Nagoya,Busan", "ship_details": "DONGJIN FORTUNE, 728", "code": "KJK", "is_kmtc": false}, {"no": 97, "trade": "Japan", "sector": "Korea-Japan", "alliance": "CK Line / Taiyoung / KMTC / Pan Continental", "operators": "Pan Continental Shipping", "service": "Busan Keihin Service (KJP/JEK3)", "ships_raw": "1 x 1010", "num_ships": 1, "teu_size": 1010, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Ulsan,Busan,Shimizu,Tokyo,Toyohashi,Yokkaichi,Nagoya,Ulsan", "ship_details": "PANCON SUCCESS, 1009", "code": "KJP", "is_kmtc": true}, {"no": 98, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Samudera", "operators": "Samudera", "service": "Korea-Japan Service (KJS)", "ships_raw": "1 x 1020", "num_ships": 1, "teu_size": 1020, "port": "Busan New Port", "terminal": "HJNC", "rotation": "Busan,Nagoya,Kobe,Busan", "ship_details": "PANCON SUCCESS, 1009", "code": "KJS", "is_kmtc": false}, {"no": 99, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Sinokor", "operators": "Sinokor", "service": "Korea-Japan Keihin Service 1 (KJS1)", "ships_raw": "1 x 1050", "num_ships": 1, "teu_size": 1050, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Yokohama,Tokyo,Nagoya,Kwangyang,Busan", "ship_details": "TOYAMA TRADER, 1054", "code": "KJS1", "is_kmtc": false}, {"no": 100, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Sinokor / Heung-A", "operators": "Sinokor", "service": "Masan-Shimonoseki Express (MSX)", "ships_raw": "1 x 430", "num_ships": 1, "teu_size": 430, "port": "Both", "terminal": "BCT/BPTS", "rotation": "Busan,Shimonoseki,Moji,Hakata,Busan", "ship_details": "HAKATA EXPRESS, 428", "code": "MSX", "is_kmtc": false}, {"no": 101, "trade": "Japan", "sector": "China-Korea-Japan", "alliance": "KMTC / Namsung", "operators": "KMTC / Namsung", "service": "New China Japan (NCJ) - Japan leg", "ships_raw": "3 x 1050", "num_ships": 3, "teu_size": 1050, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Ulsan,Kwangyang,Xingang,Qingdao,Busan,Shimizu,Onahama,Sendai,Kamaishi,Niigata,Sakaiminato,Busan", "ship_details": "STAR CLIPPER, 1043; SUNNY CAMELLIA, 1103; SUNNY CANNA, 1000", "code": "NCJ", "is_kmtc": true}, {"no": 102, "trade": "Japan", "sector": "China-Korea-Japan", "alliance": "Namsung / Dong Young", "operators": "Namsung / Dong Young", "service": "North China Korea (NCK) - Japan leg", "ships_raw": "2 x 910", "num_ships": 2, "teu_size": 910, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Incheon,Dalian,Yantai,Gunsan,Busan,Yokohama,Tokyo,Shimizu,Nagoya,Busan", "ship_details": "PREMIER, 818; PEGASUS PETA, 1009", "code": "NCK", "is_kmtc": false}, {"no": 103, "trade": "Japan", "sector": "China-Korea-Japan", "alliance": "KMTC / Namsung", "operators": "KMTC / Namsung", "service": "New China Qingdao (NCQ) - Japan leg", "ships_raw": "3 x 1050", "num_ships": 3, "teu_size": 1050, "port": "Both", "terminal": "BPTG/DGT", "rotation": "Busan,Ulsan,Kwangyang,Qingdao,Dalian,Busan,Niigata,Akita,Tomakomai,Hachinohe,Sendai,Hitachinaka,Busan", "ship_details": "SUNNY IVY, 1096; STAR SKIPPER, 1043; SUNNY VIOLET, 1000", "code": "NCQ", "is_kmtc": true}, {"no": 104, "trade": "Japan", "sector": "Korea-Japan", "alliance": "CMA CGM/CNC", "operators": "CNC", "service": "Nine Province Feeder service (NPF)", "ships_raw": "1 x 1030", "num_ships": 1, "teu_size": 1030, "port": "Busan New Port", "terminal": "BNCT", "rotation": "Busan,Shibushi,Oita,Moji,Hakata,Kwangyang,Busan", "ship_details": "PADIAN 3, 1032", "code": "NPF", "is_kmtc": false}, {"no": 105, "trade": "Japan", "sector": "China-Korea-Japan", "alliance": "Namsung / KMTC", "operators": "Namsung / KMTC", "service": "New Tohoku Pendulum (NTP) - Japan leg", "ships_raw": "3 x 1010", "num_ships": 3, "teu_size": 1010, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Shanghai,Ningbo,Busan,Kawasaki,Hitachinaka,Sendai,Tomakomai,Ishikari,Sakata,Sakaiminato,Busan,Ulsan,Kwangyang,Shanghai", "ship_details": "STAR CHASER, 963; STAR RANGER, 963; SUNNY DAISY, 1103", "code": "NTP", "is_kmtc": true}, {"no": 106, "trade": "Japan", "sector": "SEA-Korea-Japan", "alliance": "MSC", "operators": "MSC", "service": "Origami - Northbound", "ships_raw": "10 x 5290", "num_ships": 10, "teu_size": 5290, "port": "Busan New Port", "terminal": "PNC", "rotation": "Tokyo,Yokohama,Yokkaichi,Nagoya,Busan,Ningbo,Singapore,Mombasa,Dar es Salaam,Singapore,Kaohsiung,Busan,Tokyo", "ship_details": "MSC ANIELLO, 4056; MSC BEIRA IV, 4256; MSC CATHERINE VI, 6422; MSC TAURUS VII, 6492; MSC POLARIS, 4953; MSC TUXPAN V, 5060; MSC ANIELLO, 4056; MSC FLORIANA VI, 5652; MSC KALAMATA VII, 6644", "code": "ORIGMR", "is_kmtc": false}, {"no": 107, "trade": "Japan", "sector": "NEA-SEA", "alliance": "KMTC", "operators": "KMTC", "service": "Philippines Japan Express (PJX) - Northbound", "ships_raw": "3 x 1030", "num_ships": 3, "teu_size": 1030, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Manila,Busan,Tokyo,Chiba,Yokohama,Ulsan,Busan,Manila", "ship_details": "SUNNY ROSE, 1000; SUNNY FREESIA, 1096; SUNNY LAVENDER, 1000", "code": "PJS", "is_kmtc": true}, {"no": 108, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Sinokor / Heung-A", "operators": "Heung-A", "service": "Busan-Setouchi 03 (SET03)", "ships_raw": "1 x 700", "num_ships": 1, "teu_size": 700, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Busan,Kochi,Tokushima,Fukuyama,Takamatsu,Iyomishima,Tokuyama Kudamatsu,Busan", "ship_details": "PACIFIC TIANJIN, 698", "code": "SETO3", "is_kmtc": false}, {"no": 109, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Sinokor / Heung-A", "operators": "Sinokor", "service": "Busan-Setouchi 04 (SET04)", "ships_raw": "1 x 580", "num_ships": 1, "teu_size": 580, "port": "Both", "terminal": "BCT/BPTS", "rotation": "Busan,Shibushi,Nagasaki,Kumamoto,Satsumasendai,Yatsushiro,Imari ware,Busan", "ship_details": "SINOKOR NIIGATA, 580", "code": "SETO4", "is_kmtc": false}, {"no": 110, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Sinokor / Heung-A", "operators": "Sinokor", "service": "Shikoku Express (SKX)", "ships_raw": "2 x 430", "num_ships": 2, "teu_size": 430, "port": "Both", "terminal": "BCT/BPTS", "rotation": "Busan,Iyomishima,Takamatsu,Hiroshima,Iwakuni,Hososhima,Busan", "ship_details": "HANSUNG WEIHAI, 428; MOJI EXPRESS, 428", "code": "SKX1", "is_kmtc": false}, {"no": 111, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Sinokor / Heung-A", "operators": "Sinokor", "service": "Shikoku Express Service 2 (SKX2)", "ships_raw": "1 x 690", "num_ships": 1, "teu_size": 690, "port": "Both", "terminal": "BCT/BPTS", "rotation": "Busan,Tokuyama Kudamatsu,Iyomishima,Imabari,Matsuyama,Mizushima,Iwakuni,Busan", "ship_details": "HAKATA VOYAGER, 694", "code": "SKX2", "is_kmtc": false}, {"no": 112, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Sinokor / Heung-A", "operators": "Heung-A", "service": "Tohoku Hokkaido Service 2 (THS2)", "ships_raw": "1 x 1000", "num_ships": 1, "teu_size": 1000, "port": "Both", "terminal": "BCT/BPTS", "rotation": "Busan,Sendai,Hachinohe,Tomakomai,Ishikariwan,Maizuru,Sakaiminato,Busan,Shimizu,Kashima,Hitachinaka,Sendai,Hachinohe,Tomakomai,Sakata,Busan", "ship_details": "HEUNG-A XIAMEN, 1003", "code": "THS2", "is_kmtc": false}, {"no": 113, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Sinokor / Heung-A", "operators": "Sinokor", "service": "Tohoku Hokkaido Service 3 (THS3)", "ships_raw": "1 x 1050", "num_ships": 1, "teu_size": 1050, "port": "Both", "terminal": "BCT/BPTS", "rotation": "Busan,Tomakomai,Sendai,Busan", "ship_details": "AKITA TRADER, 1054", "code": "THS3", "is_kmtc": false}, {"no": 114, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Sinokor / Heung-A", "operators": "Sinokor", "service": "Tohoku Hokkaido Service 4 (THS4)", "ships_raw": "1 x 710", "num_ships": 1, "teu_size": 710, "port": "Both", "terminal": "BCT/BPTG", "rotation": "Busan,Naoetsu,Akita,Niigata,Busan", "ship_details": "ATLANTIC SOUTH, 706", "code": "THS4", "is_kmtc": false}, {"no": 115, "trade": "Japan", "sector": "Korea-Japan", "alliance": "Sinokor / Heung-A", "operators": "Heung-A", "service": "Tohoku Hokkaido Service 5 (THS5)", "ships_raw": "1 x 1000", "num_ships": 1, "teu_size": 1000, "port": "Both", "terminal": "BCT/BPTS", "rotation": "Busan,Ishikari,Tomakomai,Akita,Busan", "ship_details": "HEUNG-A HAIPHONG, 1003", "code": "THS5", "is_kmtc": false}, {"no": 116, "trade": "Japan", "sector": "China-Korea-Japan", "alliance": "Wuhan Xingang", "operators": "Wuhan Xingang Datong", "service": "Wuhan-Japan service", "ships_raw": "1 x 560", "num_ships": 1, "teu_size": 560, "port": "Busan New Port", "terminal": "DGT", "rotation": "Wuhan,Shanghai,Busan,Moji,Nagoya,Osaka,Kobe,Yangzhou,Tokyo,Yokohama,Busan,Nanjing,Wuhan (irregular rotations)", "ship_details": "HUA HANG HAN YA 2, 556", "code": "WJP", "is_kmtc": false}, {"no": 117, "trade": "Japan", "sector": "China-Korea-Japan", "alliance": "Panstar", "operators": "Panstar", "service": "Trilateral Sea-highway PanStar Service (TSPS) - Japan leg", "ships_raw": "1 x 260", "num_ships": 1, "teu_size": 260, "port": "Busan North Port", "terminal": "Intergis", "rotation": "Busan,Shidao,Busan,Tokyo,Nagoya,Busan", "ship_details": "PANSTAR GENIE, 264", "code": "PAGE", "is_kmtc": false}, {"no": 118, "trade": "ME", "sector": "Middle East", "alliance": "ESL / KMTC / GFS", "operators": "Emirates Shipping Line", "service": "Gulf Asia Liner Express (Galex / GLX / AIM)", "ships_raw": "7 x 6620", "num_ships": 7, "teu_size": 6620, "port": "Busan New Port", "terminal": "PNC", "rotation": "Busan,Qingdao,Shanghai,Ningbo,Xiamen,Nansha,Dachan Bay,Port Klang,Khor Fakkan,Sohar,Port Klang,Busan", "ship_details": "KMTC COLOMBO, 6655; KMTC DAMMAM, 8264; ESL NHAVA SHEVA, 5605; GFS GALAXY, 6969; ESL OMAN, 5527; ESL SANA, 6741; ESL WASL, 6589; ESL BUSAN, 6589", "code": "GLX", "is_kmtc": true}, {"no": 119, "trade": "Med", "sector": "ISC & FE-Med", "alliance": "HMM", "operators": "HMM", "service": "Far East-India-Med (FIM) service", "ships_raw": "15 x 9190", "num_ships": 15, "teu_size": 9190, "port": "Busan New Port", "terminal": "HPNT", "rotation": "Busan,Shanghai,Ningbo,Shekou,Singapore,Nhava Sheva,Karachi,Mundra,Algeciras,Valencia,Barcelona,Genoa,Piraeus,Algeciras,Karachi,Mundra,Nhava Sheva,Kattupalli,Singapore,Dachan Bay,Busan", "ship_details": "SEASPAN BELLWETHER, 10010; HMM LEAF, 8548; SEASPAN BEAUTY, 10010; HMM FOREST, 8548; SEASPAN BRILLIANCE, 10010; HYUNDAI BRAVE, 8566; HMM OCEAN, 7700; SEASPAN BRIGHTNESS, 10010; HMM SAGE, 8548; HMM PROMISE, 11010; SEASPAN BREEZE, 10010; HMM LIME, 8548; HMM SKY, 7700; HMM GREEN, 8548; SEASPAN BELLWETHER, 10010", "code": "FIM", "is_kmtc": false}, {"no": 120, "trade": "Med", "sector": "FE-Med", "alliance": "Gemini", "operators": "Maersk", "service": "SE4/AE19", "ships_raw": "16 x 13830", "num_ships": 16, "teu_size": 13830, "port": "Busan New Port", "terminal": "PNC", "rotation": "Ningbo,Shanghai,Qingdao,Busan,Yokohama,Ensenada,Manzanillo (Mexico),Puerto Quetzal,Buenaventura,Callao,Guayaquil,Buenaventura,Balboa,Lazaro Cardenas,Manzanillo (Mexico),Ensenada,Yokohama,Busan,Ningbo", "ship_details": "nan", "code": "AE19", "is_kmtc": false}, {"no": 121, "trade": "Med", "sector": "FE-Med", "alliance": "MSC / Premier Alliance", "operators": "MSC", "service": "Jade (Premier Alliance : MD5 eastbound only)", "ships_raw": "15 x 21930", "num_ships": 15, "teu_size": 21930, "port": "Busan New Port", "terminal": "PNC", "rotation": "Qingdao,Busan,Ningbo,Shanghai,Yantian,Singapore,Vizhinjam,Sines,Valencia,Barcelona,Gioia Tauro,Singapore,Shanghai,Qingdao", "ship_details": "MSC INES, 9200; MSC MARIELLA, 24346; MSC SAMAR, 23756; MSC CLAUDE GIRARDET, 24116; MSC LEANNE, 19462; MSC RAYA, 24116; MSC RIFAYA, 19462; MSC SIXIN, 23656; MSC DIANA, 19462; MSC MIRJA, 19224; MSC LORETO, 24346; MSC NELA, 23656; MSC MIA, 23756; MSC ALLEGRA, 23936; MSC MICHEL CAPPELLINI, 24346; MSC CELESTINO MARESCA, 24116", "code": "JADE", "is_kmtc": false}, {"no": 122, "trade": "Med", "sector": "FE-Med", "alliance": "Premier Alliance/MSC", "operators": "HMM/ONE", "service": "Mediterranean Pacific South 2 - Westbound", "ships_raw": "22 x 14480", "num_ships": 22, "teu_size": 14480, "port": "Busan New Port", "terminal": "DGT", "rotation": "Busan,Shanghai,Ningbo,Kaohsiung,Shekou,Singapore,Tangier,Valencia,Barcelona,Genoa,Fos,Tangier,Singapore,Laem Chabang,Cai Mep,Shanghai,Busan,Long Beach,Oakland,Busan", "ship_details": "ONE FORTUNE, 15258; ONE MEISHAN, 13870; HMM DRIVE, 13154; ONE FREEDOM, 15258; HMM PEARL, 13788; HMM HANBADA, 16010; ONE SWAN, 14026", "code": "MS2W", "is_kmtc": false}, {"no": 123, "trade": "Med", "sector": "FE-Med", "alliance": "MSC", "operators": "MSC", "service": "Phoenix", "ships_raw": "16 x 8900", "num_ships": 16, "teu_size": 8900, "port": "Busan New Port", "terminal": "PNC", "rotation": "Busan,Ningbo,Shanghai,Shekou,Singapore,Iskenderun,Trieste,Koper,Rijeka,Aliaga,Singapore,Busan", "ship_details": "MSC MUMBAI VIII, 8814; SANTA LINEA, 9178; CONTI CHIVALRY, 8073; MSC LETIZIA, 8819; MSC SUSANNA, 9178; MSC NICOLE X, 9640; MSC BUSAN VIII, 8089; MSC JEONGMIN, 9411", "code": "PHOENIX", "is_kmtc": false}, {"no": 124, "trade": "Med", "sector": "FE-Med", "alliance": "OCEAN Alliance", "operators": "CMA CGM", "service": "Asia-Med Service 5 (MED5) (Phoenixian Express(PHOEX) / AEM6 / AAS / BEX2)", "ships_raw": "11 x 15020", "num_ships": 11, "teu_size": 15020, "port": "Busan New Port", "terminal": "BNCT", "rotation": "Shanghai,Ningbo,Busan,Shekou,Singapore,(Suez Canal),Alexandria,Beirut,Tripoli,Koper,Trieste,Rijeka,Alexandria,(Suez Canal),Jeddah,Port Klang,Shekou,Shanghai", "ship_details": "CMA CGM AMAZONIA, 13264; CMA CGM COBALT, 13136; CMA CGM PANAMA, 15072; CMA CGM CARMEN, 16188; CMA CGM ANTIGONE, 16188; CMA CGM EUGENIE, 16188; CMA CGM ARGON, 13136; CMA CGM OSIRIS, 15536; CMA CGM MONTE CRISTO, 16136; CMA CGM D'ARTAGNAN, 16136; CMA CGM ADONIS, 15464; CMA CGM HERMES, 15536; CMA CGM SAO PAULO, 13264", "code": "PHXOA", "is_kmtc": false}, {"no": 125, "trade": "Med", "sector": "FE-Med", "alliance": "MSC / Premier Alliance", "operators": "MSC", "service": "Tiger (Premier Alliance : MD3)", "ships_raw": "16 x 20730", "num_ships": 16, "teu_size": 20730, "port": "Busan New Port", "terminal": "PNC", "rotation": "Xingang,Dalian,Busan,Ningbo,Shanghai,Singapore,Yarimca,Ambarli,Tekirdag,Piraeus,Singapore,Xiamen,Xingang", "ship_details": "MSC JADE, 19224; MSC VIVIANA, 19368; MSC MAYA, 19224; MSC TURKIYE, 24346; MSC GEMMA, 24116; MSC IVA, 16464; MSC CHINA, 24116; MSC ANNA, 19368; MSC LONDON, 18500; MSC DITTE, 19224; MSC LENI, 23756; MSC CRAPOLLA, 15413; MSC FEBE, 23756; ATETI, 7023; MSC ARINA, 23656; MSC AMELIA, 23782; MSC DILETTA, 23936; MSC TESSA, 24116; MSC HAMBURG, 18500; MSC AMBRA, 23756; MSC ISABELLA, 23656", "code": "TIGER", "is_kmtc": false}, {"no": 126, "trade": "Med", "sector": "FE-Med", "alliance": "ZIM", "operators": "Zim", "service": "ZIM Med Premium (ZMP)", "ships_raw": "15 x 7790", "num_ships": 15, "teu_size": 7790, "port": "Busan New Port", "terminal": "BCT", "rotation": "Shanghai,Ningbo,Busan,Dachan Bay,Cai Mep,Valencia,Barcelona,Genoa,Ashdod,Haifa,Port Said West,Qingdao,Shanghai", "ship_details": "ZIM SPINEL, 7000; ZIM EMERALD, 7000; SAN DIEGO, 8440; JASPER, 7000; ZIM NORFOLK, 9115; ZIM RUBY, 7000; SHENZHEN, 8586; ZIM DIAMOND, 7000; MOONSTONE, 7000; NINGBO, 8440; ZIM XIAMEN, 9115", "code": "ZMP", "is_kmtc": false}, {"no": 127, "trade": "N. Europe", "sector": "FE-NEU", "alliance": "MSC / Premier Alliance", "operators": "HMM/ONE", "service": "Far East-Europe 4 (FE4) (MSC : Silk)", "ships_raw": "15 x 22000", "num_ships": 15, "teu_size": 22000, "port": "Busan New Port", "terminal": "HJNC", "rotation": "Shanghai,Busan,Rotterdam,Hamburg,Le Havre,Shanghai", "ship_details": "HMM SOUTHAMPTON, 23820; ONE INTEGRITY, 24136; ONE TRUST, 20170; ONE INFINITY, 24136; ONE INNOVATION, 24136; ONE TRADITION, 20170; ONE INGENUITY, 24136; ZEUS LUMOS, 14952; ONE TREASURE, 20182; ONE INSPIRATION, 24136", "code": "FE4", "is_kmtc": false}, {"no": 128, "trade": "N. Europe", "sector": "FE-NEU", "alliance": "Premier Alliance", "operators": "ONE / HMM / YML", "service": "Far East Pacific 2 (FP2) - westbound", "ships_raw": "22 x 13270", "num_ships": 22, "teu_size": 13270, "port": "Busan New Port", "terminal": "HJNC", "rotation": "Busan,Kaohsiung,Shanghai,Ningbo,Yantian,Singapore,Southampton,Rotterdam,Southampton,Singapore,Laem Chabang,Cai Mep,Yantian,Busan,Tacoma,Vancouver (BC),Busan", "ship_details": "YM WONDERLAND, 14220; ONE MAGDALENA, 11923; HMM DREAM, 13154; ONE FORWARD, 15456; ONE STRENGTH, 13932; YM TOGETHER, 11714; ONE APUS, 14052; ONE MANHATTAN, 13900; ONE AMAZON, 11923; ONE MINATO, 13870; ONE CYGNUS, 14052; ONE HUMBER, 9040; ONE OWL, 14026; YM TOPMOST, 11714; HMM GARAM, 16010", "code": "FP2W", "is_kmtc": false}, {"no": 129, "trade": "N. Europe", "sector": "FE-NEU", "alliance": "MSC / Premier Alliance", "operators": "MSC", "service": "Swan (Premier Alliance : FE6)", "ships_raw": "17 x 15140", "num_ships": 17, "teu_size": 15140, "port": "Busan New Port", "terminal": "BCT", "rotation": "Ningbo,Shanghai,Xiamen,Yantian,Singapore,Le Havre,Rotterdam,Gothenburg,Aarhus,Hamburg,Antwerp,Port Klang,Singapore,Laem Chabang,Cai Mep,Busan,Long Beach,Oakland,Yokohama,Ningbo", "ship_details": "MSC GERMANY, 16000; MSC ELEONORE, 15413; MSC VICTORINE, 16616; MSC ANGOLA, 14400; MSC ELISA XIII, 13568; MSC NERANO, 15413; MSC ARIANE, 13050; MSC LAUREN, 13000; MSC JOSEFINA, 16196; MSC CRISTINA, 13102; MSC CARMELITA, 16616; MSC ANNAMARIA, 16000; MSC EVA, 13798; MSC THAIS, 15576; MSC ANITA, 16616; MSC ADYA, 15934; MSC OLBIA, 16000", "code": "SWAN", "is_kmtc": false}, {"no": 130, "trade": "Oceania", "sector": "Oceania", "alliance": "CMA CGM", "operators": "CMA CGM/ANL", "service": "North Asia-PNG APR2", "ships_raw": "3 x 1710", "num_ships": 3, "teu_size": 1710, "port": "Busan New Port", "terminal": "BNCT", "rotation": "Yantian,Hong Kong,Keelung,Shanghai,Ningbo,Busan,Manzanillo (Mexico),Lazaro Cardenas,Callao,Iquique,Puerto Angamos,Valparaiso,San Vicente,Yantian", "ship_details": "SAN GIORGIO, 1756; FLORA DELMAS, 1641; ANL MOUNT WILHELM, 1740", "code": "APR2", "is_kmtc": false}, {"no": 131, "trade": "Oceania", "sector": "Oceania", "alliance": "A3 Consortium", "operators": "COSCO/ANL", "service": "A3 Northern Express (A3N)", "ships_raw": "7 x 6750", "num_ships": 7, "teu_size": 6750, "port": "Busan New Port", "terminal": "BCT", "rotation": "Nansha,Hong Kong,Ningbo,Busan,Callao,Iquique,San Antonio,Nansha", "ship_details": "PELION, 7092; TAMPA I, 6648; OOCL SHANGHAI, 5762; ALS JUNO, 7117; ALS LUNA, 7117", "code": "A3N", "is_kmtc": false}, {"no": 132, "trade": "Oceania", "sector": "Oceania", "alliance": "COSCO / ONE / Maersk", "operators": "COSCO / ONE / Maersk", "service": "Japan-China-NZ service (NZJ / ANZL / JKN)", "ships_raw": "8 x 4830", "num_ships": 8, "teu_size": 4830, "port": "Busan New Port", "terminal": "PNC", "rotation": "Tokyo,Kobe,Busan,Shanghai,Yantian,Hong Kong,Brisbane,Auckland,Lyttelton,Napier,Tauranga,Tokyo", "ship_details": "VOLANS, 4258; BF GIANT, 4398; GSL KITHIRA, 5470; NYK FUSHIMI, 4538; ONE ATLAS, 4253; COSCO FELIXSTOWE, 5446; COSCO HAMBURG, 5446", "code": "ANZL", "is_kmtc": false}, {"no": 133, "trade": "Oceania", "sector": "Oceania", "alliance": "Blue Water Shipping", "operators": "BBC", "service": "Kumul Service", "ships_raw": "1 x 340", "num_ships": 1, "teu_size": 340, "port": "Busan New Port", "terminal": "BNMT", "rotation": "Busan,Chofu,Kobe,Lihir,Lae,Busan", "ship_details": "BBC AUSTRALIA, 336", "code": "BBAL", "is_kmtc": false}, {"no": 134, "trade": "Oceania", "sector": "Oceania", "alliance": "APL", "operators": "APL", "service": "Guam Saipan Express (GSX)", "ships_raw": "2 x 1720", "num_ships": 2, "teu_size": 1720, "port": "Busan New Port", "terminal": "BNCT", "rotation": "Busan,Hakata,Yokohama,Apra (GUAM),Saipan,Busan", "ship_details": "APL OCEANIA, 1732; APL ISLANDER, 1713", "code": "GSX", "is_kmtc": false}, {"no": 135, "trade": "Oceania", "sector": "Oceania", "alliance": "Hapag-Lloyd / Evergreen / HMM / ONE", "operators": "Hapag-Lloyd / Evergreen / HMM / ONE", "service": "North East Asia-Australia Express (NEAX / NAX / A1X / AUE)", "ships_raw": "6 x 6250", "num_ships": 6, "teu_size": 6250, "port": "Busan New Port", "terminal": "HPNT", "rotation": "Busan,Qingdao,Shanghai,Ningbo,Yantian,Sydney,Melbourne,Brisbane,Busan", "ship_details": "EVER SMART, 7024; PHOEBE, 6014; EVER SAFETY, 7024; ITAL UNICA, 5652; EVER STRONG, 7024; HMM PARAMOUNT, 5023; HYUNDAI SHANGHAI, 6765; WIDE JULIET, 5466", "code": "NEAX", "is_kmtc": false}, {"no": 136, "trade": "Oceania", "sector": "Oceania", "alliance": "MSC / Zim", "operators": "MSC / Zim", "service": "Panda/Zim Australia Express (ZAX) Service", "ships_raw": "7 x 5590", "num_ships": 7, "teu_size": 5590, "port": "Busan New Port", "terminal": "PNIT", "rotation": "Busan,Qingdao,Shanghai,Ningbo,Nansha,Hong Kong,Yantian,Brisbane,Melbourne,Sydney,Brisbane,Busan", "ship_details": "MSC MAGNITUDE VII, 6976; MSC SHINA V, 5117; SEASMILE, 5071; MSC LUISA, 6732; SEAGULL, 5370; MSC DAISY, 4943; MSC UNITY VI, 5364; MSC SHINA V, 5117", "code": "PANDA", "is_kmtc": false}, {"no": 137, "trade": "Oceania", "sector": "Oceania", "alliance": "Swire", "operators": "Swire Shipping", "service": "Pacific North Asia Service (Loop 1)", "ships_raw": "4 x 1870", "num_ships": 4, "teu_size": 1870, "port": "Busan New Port", "terminal": "DGT", "rotation": "Kaohsiung,Xingang,Qingdao(alt calls),Busan,Yokohama,Port Vila,Noumea,Lautoka,Suva,Nuku'Alofa,Apia,Pago Pago,Santo(alt calls),Kaohsiung", "ship_details": "NEW GUINEA CHIEF, 1617; MAJURO CHIEF, 2118; PAPUAN CHIEF, 1617; NOUMEA CHIEF, 2118", "code": "SWL/BNMT", "is_kmtc": false}, {"no": 138, "trade": "Oceania", "sector": "Oceania", "alliance": "Swire", "operators": "Swire Shipping", "service": "North Asia Service (NAT)", "ships_raw": "3 x 2120", "num_ships": 3, "teu_size": 2120, "port": "Busan New Port", "terminal": "DGT", "rotation": "Kaohsiung,Changshu,Yokohama,Osaka,Busan,Lae,Motokea,Noumea,Auckland,Timaru,Tauranga,Marsden Point,Noumea,Prony Bay,Sri Racha,Kaohsiung", "ship_details": "PORT VILA CHIEF, 2118; KIRIBATI CHIEF, 2118; SAMOA CHIEF, 2118", "code": "SWL", "is_kmtc": false}, {"no": 139, "trade": "Oceania", "sector": "Oceania", "alliance": "Swire", "operators": "Swire Shipping", "service": "Pacific North Asia Service (Loop 3)", "ships_raw": "1 x 1400", "num_ships": 1, "teu_size": 1400, "port": "Busan New Port", "terminal": "DGT", "rotation": "Busan,Majuro,Tarawa,Lae,Busan", "ship_details": "SIMAG SHANGHAI, 1400", "code": "SWL/BNMT", "is_kmtc": false}, {"no": 140, "trade": "Oceania", "sector": "Oceania", "alliance": "Kyowa/NYK Bulk", "operators": "Kyowa", "service": "Saipan Guam & Micronesia Service", "ships_raw": "3 x 690", "num_ships": 3, "teu_size": 690, "port": "Busan North Port", "terminal": "Conventional", "rotation": "Busan,Kobe,Yokohama,Saipan,Apra(Guam),Koror(alt calls),Yap(alt calls),Chuuk,Pohnpei,Kosrae,Majuro,Ebeye,Busan", "ship_details": "KYOWA EAGLE, 782; KYOWA STORK, 649; KYOWA FALCON, 649", "code": "nan", "is_kmtc": false}, {"no": 141, "trade": "Oceania", "sector": "Oceania", "alliance": "Kyowa/NYK Bulk/Swire", "operators": "Swire Shipping", "service": "South Pacific Islands / South Pacific Link / Pacific North Asia Service Loop 2", "ships_raw": "4 x 910", "num_ships": 4, "teu_size": 910, "port": "Busan North Port", "terminal": "Conventional", "rotation": "Busan,Kobe,Nagoya,Yokohama,Honiara,Santo,Port Vila,Noumea,Lautoka,Suva,Nuku'Alofa,Apia,Pago Pago,Papeete,Tarawa,Busan", "ship_details": "SOUTH ISLANDER, 900; PACIFIC ISLANDER II, 912; CORAL ISLANDER II, 912; TROPICAL ISLANDER, 900", "code": "nan", "is_kmtc": false}, {"no": 142, "trade": "Oceania", "sector": "Oceania", "alliance": "Kyowa/NYK Bulk", "operators": "Kyowa", "service": "PNG & Australia Service", "ships_raw": "2 x 510", "num_ships": 2, "teu_size": 510, "port": "Busan North Port", "terminal": "Conventional", "rotation": "Busan,Moji,Kobe,Yokohama,Rabaul,Lae,Port Moresby,Townsville,Keelung,Busan", "ship_details": "KYOWA ROSE, 506; KYOWA ORCHID, 506", "code": "nan", "is_kmtc": false}, {"no": 143, "trade": "Russia Far East", "sector": "Russia-Korea-China", "alliance": "CK Line", "operators": "CK Line", "service": "Busan Russia Express (BRX)", "ships_raw": "1 x 630", "num_ships": 1, "teu_size": 630, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Cai Mep,Haiphong,Yantian,Ningbo,Shanghai,Qingdao,Busan,Seattle,Prince Rupert,Vancouver (BC),Busan,Cai Mep", "ship_details": "PROVIDENT, 632", "code": "BRX", "is_kmtc": false}, {"no": 144, "trade": "Russia Far East", "sector": "Russia-Korea-China", "alliance": "Transit", "operators": "Transit", "service": "Busan Vladivostok Service (BVS)", "ships_raw": "2 x 1310", "num_ships": 2, "teu_size": 1310, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Xiamen,Nansha,Busan,Vladivostok,Xiamen", "ship_details": "XIANG YUAN HE RUN, 1510; TRANSIT TATARKA, 1113", "code": "BVS", "is_kmtc": false}, {"no": 145, "trade": "Russia Far East", "sector": "Russia Far East", "alliance": "STF Shipping", "operators": "STF Shipping", "service": "North China-Russia (STF-1)", "ships_raw": "1 x 1740", "num_ships": 1, "teu_size": 1740, "port": "Busan New Port", "terminal": "DGT", "rotation": "Shanghai,Busan,Vrangel,Shanghai", "ship_details": "JI XING 89, 1744", "code": "GBS", "is_kmtc": false}, {"no": 146, "trade": "Russia Far East", "sector": "Russia Far East", "alliance": "MSC", "operators": "MSC", "service": "Golden Horn Service", "ships_raw": "1 x 1500", "num_ships": 1, "teu_size": 1500, "port": "Busan New Port", "terminal": "PNIT", "rotation": "Busan,Vladivostok,Busan", "ship_details": "MSC RICCARDA II, 1496", "code": "GHRN", "is_kmtc": false}, {"no": 147, "trade": "Russia Far East", "sector": "Russia-Korea-China", "alliance": "Sinokor / Heung-A", "operators": "Sinokor / Heung-A", "service": "Haiphong-Busan Service 1 (HPS1) Northbound", "ships_raw": "3 x 1080", "num_ships": 3, "teu_size": 1080, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Ulsan,Kwangyang,Hong Kong,Haiphong,Hong Kong,Shekou,Xiamen,Busan,Vladivostok,Busan", "ship_details": "KOBE TRADER, 1080; QINGDAO TRADER, 1080", "code": "HPS1", "is_kmtc": false}, {"no": 148, "trade": "Russia Far East", "sector": "Russia-Japan-Korea", "alliance": "FESCO", "operators": "FESCO", "service": "Japan Trans Siberian Line (JTSL)", "ships_raw": "1 x 500", "num_ships": 1, "teu_size": 500, "port": "Busan New Port", "terminal": "HPNT", "rotation": "Vladivostok,Yokohama,Nagoya,Kobe,Busan,Toyama,Vladivostok", "ship_details": "JI YU, 495", "code": "JRX", "is_kmtc": false}, {"no": 149, "trade": "Russia Far East", "sector": "Russia-Korea", "alliance": "FESCO", "operators": "FESCO", "service": "FESCO Korea Express-1 (FKXP-1 )", "ships_raw": "1 x 1710", "num_ships": 1, "teu_size": 1710, "port": "Busan New Port", "terminal": "HPNT", "rotation": "Busan,Vladivostok,Busan", "ship_details": "ZHONG CHUAN HAI YUN, 941", "code": "KRS", "is_kmtc": false}, {"no": 150, "trade": "Russia Far East", "sector": "Russia-Korea", "alliance": "Dong Young", "operators": "Dong Young", "service": "Korea Russia Vladivostok (KRV)", "ships_raw": "1 x 890", "num_ships": 1, "teu_size": 890, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Vladivostok,Busan", "ship_details": "KAI HANG 5, 889", "code": "KRV", "is_kmtc": false}, {"no": 151, "trade": "Russia Far East", "sector": "Russia-Korea", "alliance": "Dong Young", "operators": "Dong Young", "service": "Korea Russia Express (KRX)", "ships_raw": "1 x 720", "num_ships": 1, "teu_size": 720, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Vladivostok,Busan", "ship_details": "HT HUIZHOU, 724", "code": "KRX", "is_kmtc": false}, {"no": 152, "trade": "Russia Far East", "sector": "Russia-Korea", "alliance": "Sinokor / Heung-A", "operators": "Sinokor", "service": "Pusan-Vladivostok shuttle (PVS2)", "ships_raw": "2 x 1100", "num_ships": 2, "teu_size": 1100, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Vladivostok,Busan", "ship_details": "NINGBO TRADER, 1118; KOBE TRADER, 1080", "code": "PVS2", "is_kmtc": false}, {"no": 153, "trade": "Russia Far East", "sector": "Russia-Korea", "alliance": "Dong Young", "operators": "Dong Young", "service": "Russia China Express (RCX)", "ships_raw": "1 x 1010", "num_ships": 1, "teu_size": 1010, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Vladivostok,Busan", "ship_details": "PEGASUS TERA, 1009", "code": "RCX", "is_kmtc": false}, {"no": 154, "trade": "Russia Far East", "sector": "Russia-Korea", "alliance": "MSC", "operators": "MSC", "service": "Japan-Korea-FE Russia service (Sunrise)", "ships_raw": "1 x 1740", "num_ships": 1, "teu_size": 1740, "port": "Busan New Port", "terminal": "PNIT", "rotation": "Busan,Vostochny,Busan", "ship_details": "MSC ACE II, 1740", "code": "SRISEA", "is_kmtc": false}, {"no": 155, "trade": "Russia Far East", "sector": "Russia-Korea-China", "alliance": "Hua Xin", "operators": "Hua Xin", "service": "Taicang-Vladivostok 1 (TV1)", "ships_raw": "1 x 730", "num_ships": 1, "teu_size": 730, "port": "Busan North Port", "terminal": "Intergis", "rotation": "Taicang,Ningbo,Qingdao,Busan,Vladivostok,Vostochny,Taicang", "ship_details": "DATU HONOR, 734", "code": "nan", "is_kmtc": false}, {"no": 156, "trade": "Russia Far East", "sector": "Russia-Korea-China", "alliance": "Panda Express Line", "operators": "Panda Express Line", "service": "Panda Express Line 1", "ships_raw": "1 x 1350", "num_ships": 1, "teu_size": 1350, "port": "Busan North Port", "terminal": "Intergis", "rotation": "Busan,Rizhao,Shanghai,Vladivostok,Busan", "ship_details": "HAI RUN SHENG DA, 1345", "code": "nan", "is_kmtc": false}, {"no": 157, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "Gemini", "operators": "Maersk/Hapag-Lloyd", "service": "Asia Shuttle 5 (A05) / Korea Shuttle 1 (KS1)", "ships_raw": "3 x 4610", "num_ships": 3, "teu_size": 4610, "port": "Busan New Port", "terminal": "PNC", "rotation": "Incheon,Busan,Ulsan,Shanghai,Ho Chi Minh City,Laem Chabang,Jakarta,Ho Chi Minh City,Hong Kong,Shekou,Incheon", "ship_details": "REN JIAN 15, 4395; GRASMERE MAERSK, 4822; MAERSK CAP JERVIS, 4600", "code": "A05", "is_kmtc": false}, {"no": 158, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "Gemini", "operators": "Maersk/Hapag-Lloyd", "service": "Asia Shuttle 14 (A14) /Bohai Shuttle 5 (BS5)", "ships_raw": "4 x 4570", "num_ships": 4, "teu_size": 4570, "port": "Busan New Port", "terminal": "PNC", "rotation": "Busan,Hakata,Kanazawa,Kushiro,Muroran,Tomakomai,Ishikari,Akita,Busan", "ship_details": "SYNERGY BUSAN, 4253; UTE, 5041; NAVIOS JASMINE, 4730; SYNERGY KEELUNG, 4253", "code": "A14", "is_kmtc": false}, {"no": 159, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "KMTC / Sinokor / Namsung", "operators": "Namsung Shipping", "service": "Asia New Express (ANX/ANE)", "ships_raw": "4 x 2620", "num_ships": 4, "teu_size": 2620, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Busan,Hakata,Tokuyama,Moji,Hibiki,Busan,Moji,Tokuyama,Hakata,Busan", "ship_details": "INCHEON VOYAGER, 2548; STARSHIP JUPITER, 2556; KMTC SURABAYA, 2806; KMTC XIAMEN, 2556", "code": "ANX", "is_kmtc": true}, {"no": 160, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "Namsung / Pan Continental", "operators": "Pan Continental Shipping", "service": "Busan Incheon Haiphong (BIH)", "ships_raw": "2 x 1010", "num_ships": 2, "teu_size": 1010, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Kwangyang,Incheon,Hong Kong,Haiphong,Hong Kong,Busan", "ship_details": "STAR EXPLORER, 1011; PANCON HARMONY, 1011", "code": "BIH", "is_kmtc": false}, {"no": 161, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "CMA CGM", "operators": "CMA CGM", "service": "Bohai Manila Express (BMX)", "ships_raw": "5 x 3920", "num_ships": 5, "teu_size": 3920, "port": "Busan New Port", "terminal": "BNCT", "rotation": "Busan,Dalian,Xingang,Qingdao,Xiamen,Shantou,Shekou,Hong Kong,Nansha,Manila(N/S),Davao,Busan", "ship_details": "HG SKYLINE, 3316; CMA CGM GUILD, 4294; TB TAIYUAN, 4011; CMA CGM AMERICA, 4045", "code": "BMX", "is_kmtc": false}, {"no": 162, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "Sinokor", "operators": "Heung-A", "service": "Busan-Thailand Saigon (BTS)", "ships_raw": "3 x 1810", "num_ships": 3, "teu_size": 1810, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Pyongtaek,Kwangyang,Busan,Shanghai,Ho Chi Minh City,Laem Chabang,Bangkok,Laem Chabang,Ho Chi Minh City,Pyongtaek", "ship_details": "SAWASDEE SPICA, 1809; SAWASDEE ATLANTIC, 1809; SAWASDEE CAPELLA, 1809", "code": "BTS", "is_kmtc": false}, {"no": 163, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "SITC", "operators": "SITC", "service": "China Japan Vietnam 2 (CJV2)", "ships_raw": "3 x 1010", "num_ships": 3, "teu_size": 1010, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Shanghai,Osaka,Kobe,Yokkaichi,Nagoya,Busan,Shanghai,Haiphong,Shekou,Shanghai", "ship_details": "INTRA BHUM, 1043; SITC YANTAI, 1042; SITC KWANGYANG, 953", "code": "CJV2", "is_kmtc": false}, {"no": 164, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "SITC", "operators": "SITC", "service": "China Japan Vietnam 3 (CJV3)", "ships_raw": "3 x 1030", "num_ships": 3, "teu_size": 1030, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Shanghai,Tokyo,Kawasaki,Yokohama,Shimizu,Busan,Shanghai,Xiamen,Haiphong,Shanghai", "ship_details": "SITC RENHE, 1023; SITC YUANHE, 1023; SITC QINGDAO, 1043", "code": "CJV3", "is_kmtc": false}, {"no": 165, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "KMTC", "operators": "KMTC", "service": "Korea-China-Indonesia service (CKI)", "ships_raw": "3 x 1820", "num_ships": 3, "teu_size": 1820, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Busan,Kwangyang,Shanghai,Ningbo,Jakarta,Surabaya,Ho Chi Minh City,Shanghai,Busan", "ship_details": "KMTC SHANGHAI, 1860; KMTC HAIPHONG, 1804; KMTC INCHEON, 1809", "code": "CKI2", "is_kmtc": true}, {"no": 166, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "CNC", "operators": "CNC", "service": "China Southeast Asia Service (CSE)", "ships_raw": "4 x 1800", "num_ships": 4, "teu_size": 1800, "port": "Busan New Port", "terminal": "BCT", "rotation": "Dalian,Incheon,Shanghai,Ningbo,Laem Chabang,Bangkok,Laem Chabang,Manila,Qui Nhon,Chu Lai,Busan,Dalian", "ship_details": "KUO LONG, 1756; SEA OF LUCK, 1645; CNC MARS, 1952; CNC PLUTO, 1756; ZHONG GU BO HAI, 1912", "code": "CSE1", "is_kmtc": false}, {"no": 167, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "ONE / RCL", "operators": "ONE / RCL", "service": "RCL Thailand Manila Service (RLM2) / China Thailand Philippines (CTP)", "ships_raw": "5 x 2740", "num_ships": 5, "teu_size": 2740, "port": "Busan New Port", "terminal": "HPNT", "rotation": "Qingdao,Busan,Shanghai,Laem Chabang,Cai Mep,Manila,Subic Bay,Qingdao", "ship_details": "IRENES RALLY, 2782; VIRA BHUM, 2588; ACX PEARL, 2858; MARINA ONE, 2741", "code": "CTP", "is_kmtc": false}, {"no": 168, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "MSC", "operators": "MSC", "service": "DOLPHIN service", "ships_raw": "7 x 2950", "num_ships": 7, "teu_size": 2950, "port": "Busan New Port", "terminal": "PNIT", "rotation": "Busan,Qingdao,Dalian,Xingang,Kaohsiung,Shekou,Port Klang,Singapore,Semarang,Surabaya,Singapore,Haiphong,Busan", "ship_details": "MSC NEW JERSEY III, 2786; MSC ELBA III, 3534; MSC AMEERA III, 3534; MSC SPARKLE III, 2553; MSC ANCONA III, 2447; MSC VAIGA III, 2824", "code": "DPHIN", "is_kmtc": false}, {"no": 169, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "Sinokor / Heung-A / SITC", "operators": "Sinokor / Heung-A / SITC", "service": "Far East to Malaysia (FEM)", "ships_raw": "5 x 2480", "num_ships": 5, "teu_size": 2480, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Busan,Ulsan,Kwangyang,Shanghai,Port Klang Northport,Penang,Hong Kong,Shanghai,Busan", "ship_details": "SURABAYA VOYAGER, 2006; KWANGYANG VOYAGER, 2548; SHANGHAI VOYAGER, 2553; NINGBO VOYAGER, 2782; JAKARTA VOYAGER, 2535", "code": "FEM", "is_kmtc": false}, {"no": 170, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "Maersk", "operators": "Sealand Asia", "service": "HP2 service", "ships_raw": "3 x 2180", "num_ships": 3, "teu_size": 2180, "port": "Busan New Port", "terminal": "PNC", "rotation": "Busan,Kwangyang,Shanghai,Xiamen,Kaohsiung,Hong Kong,Haiphong,Nansha,Hong Kong,Kaohsiung,Busan", "ship_details": "MAERSK NACKA, 2362; MAERSK NORESUND, 2086; MAERSK NOTODDEN, 2080", "code": "HP2", "is_kmtc": false}, {"no": 171, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "Sinokor / Heung-A", "operators": "Sinokor / Heung-A", "service": "Haiphong-Busan Service 1 (HPS1) Southbound", "ships_raw": "3 x 1080", "num_ships": 3, "teu_size": 1080, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Ulsan,Kwangyang,Hong Kong,Haiphong,Hong Kong,Shekou,Xiamen,Busan,Vladivostok,Busan", "ship_details": "KOBE TRADER, 1080; QINGDAO TRADER, 1080", "code": "HPS1", "is_kmtc": false}, {"no": 172, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "Sinokor / Heung-A", "operators": "Sinokor / Heung-A", "service": "Haiphong-Busan Service 2 (HPS2)", "ships_raw": "2 x 1010", "num_ships": 2, "teu_size": 1010, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Incheon,Ulsan,Busan,Haiphong,Shekou,Incheon", "ship_details": "PACIFIC BEIJING, 1118; NAGOYA TRADER, 907", "code": "HPS2", "is_kmtc": false}, {"no": 173, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "CK Line / KMTC", "operators": "CK Line", "service": "Haiphong Express (HPX)", "ships_raw": "2 x 1000", "num_ships": 2, "teu_size": 1000, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Incheon,Busan,Haiphong,Qinzhou,Xiamen,Incheon", "ship_details": "SKY MOON, 1009; SKY TIARA, 1000", "code": "HPX", "is_kmtc": true}, {"no": 174, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "Maersk", "operators": "Maersk", "service": "Intra-Asia service 4 (IA4)", "ships_raw": "6 x 2990", "num_ships": 6, "teu_size": 2990, "port": "Busan New Port", "terminal": "PNC", "rotation": "Xingang,Qingdao,Xiamen,Manila North,Tanjung Pelepas,Jakarta,Tanjung Pelepas,Batangas,Nansha,Hong Kong,Busan,Xingang", "ship_details": "PHOENIX D, 2174; JOSEPHINE MAERSK, 3003; IRENES RAY, 3398; CAPITAINE BARET, 2664; AS NARA, 3534; X-PRESS AQUARIUS, 3158", "code": "IA4S", "is_kmtc": false}, {"no": 175, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "Maersk", "operators": "Maersk", "service": "Intra-Asia service 88 (IA88)", "ships_raw": "5 x 2170", "num_ships": 5, "teu_size": 2170, "port": "Busan New Port", "terminal": "PNC", "rotation": "Laem Chabang,Bangkok,Laem Chabang,Haiphong,Hong Kong,Nansha,Yokohama,Nagoya,Osaka,Kobe,Moji,Hibiki,Busan,Hakata,Shanghai,Ningbo,Ho Chi Minh City,Laem Chabang", "ship_details": "NORDAGER MAERSK, 2298; MAERSK NUSSFJORD, 2086; NUUK MAERSK, 2298; MAERSK NAMSOS, 2080; MAERSK NARVIK, 2086", "code": "IA88S", "is_kmtc": false}, {"no": 176, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "Sinokor / Heung-A", "operators": "Heung-A", "service": "Incheon-Haiphong Express 2 (IHP2)", "ships_raw": "2 x 1100", "num_ships": 2, "teu_size": 1100, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Incheon,Hong Kong,Haiphong,Hong Kong,Busan", "ship_details": "HEUNG-A YOUNG, 1103; HEUNG-A SARAH, 1103", "code": "IHP2", "is_kmtc": false}, {"no": 177, "trade": "SE Asia", "sector": "SEA-Korea-Japan", "alliance": "ONE", "operators": "ONE", "service": "Japan Philippines service (JPH)) - Southbound", "ships_raw": "3 x 2590", "num_ships": 3, "teu_size": 2590, "port": "Busan New Port", "terminal": "HPNT", "rotation": "Busan,Nagoya,Yokkaichi,Shimizu,Tokyo,Yokohama,Osaka,Kobe,Busan,Manila,Busan", "ship_details": "LOS ANDES BRIDGE, 2553; ONE DANIELLA, 2664; SEABREEZE, 2553", "code": "JPHS", "is_kmtc": false}, {"no": 178, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "WH", "operators": "WH", "service": "Japan (Kansai)-Taiwan-Vietnam service (JSV)", "ships_raw": "3 x 2040", "num_ships": 3, "teu_size": 2040, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Danang,Ho Chi Minh City,Kaohsiung,Taipei,Hakata,Kobe,Osaka,Ulsan,Busan,Keelung,Kaohsiung,Danang", "ship_details": "WAN HAI 289, 2038; WAN HAI 290, 2038; WAN HAI 288, 2038", "code": "JSV", "is_kmtc": false}, {"no": 179, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "CNC", "operators": "CNC", "service": "Japan Thailand Vietnam South China South Korea Express (JTVSCSE)", "ships_raw": "4 x 1720", "num_ships": 4, "teu_size": 1720, "port": "Busan New Port", "terminal": "BNCT", "rotation": "Tokyo,Yokohama,Nagoya,Kobe,Busan,Kwangyang,Kaohsiung,Chu Lai,Laem Chabang,Ho Chi Minh City,Tokyo", "ship_details": "CNC BANGKOK, 1708; LI DA WANG, 1638; CNC SULAWESI, 1781; HANSA HOMBURG, 1738", "code": "JTVS", "is_kmtc": false}, {"no": 180, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "ONE", "operators": "ONE", "service": "Japan Vietnam Haiphong (JVH)", "ships_raw": "3 x 1710", "num_ships": 3, "teu_size": 1710, "port": "Busan New Port", "terminal": "HJNC", "rotation": "Tokyo,Shimizu,Nagoya,Kobe,Busan,Keelung,Kaohsiung,Haiphong,Kaohsiung,Hakata,Tokyo", "ship_details": "PEARL RIVER BRIDGE, 1708; SMOOTH WIND, 1708; SWAN RIVER BRIDGE, 1708", "code": "JVH", "is_kmtc": false}, {"no": 181, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "ONE/Namsung/TSL/SITC", "operators": "ONE/Namsung/TSL/SITC", "service": "Korea China Indonesia (KCI)", "ships_raw": "4 x 2790", "num_ships": 4, "teu_size": 2790, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Qingdao,Shanghai,Ningbo,Jakarta,Surabaya,Shekou,Xiamen,Busan", "ship_details": "INTERASIA ENGAGE, 2782; TS VANCOUVER, 2954; AS CASPRIA, 2872; STARSHIP VENUS, 2556", "code": "KCI", "is_kmtc": false}, {"no": 182, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "KMTC / SITC / TSL", "operators": "SITC/TSL", "service": "Korea-China-Malaysia service (KCM)", "ships_raw": "5 x 2630", "num_ships": 5, "teu_size": 2630, "port": "Busan New Port", "terminal": "DGT", "rotation": "Busan,Incheon,Qingdao,Shanghai,Hong Kong,Port Klang Westport,Pasir Gudang,Hong Kong,Shekou,Busan", "ship_details": "SITC YUNCHENG, 2433; KMTC DALIAN, 2556; KMTC QINGDAO, 2826; TS NANSHA, 2693", "code": "KCM", "is_kmtc": true}, {"no": 183, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "CNC", "operators": "CNC", "service": "China Korea Malaysia service (KCM2)", "ships_raw": "6 x 4320", "num_ships": 6, "teu_size": 4320, "port": "Busan New Port", "terminal": "BNCT", "rotation": "Xingang,Busan,Qingdao,Ningbo,Shanghai,Shantou,Shekou,Port Klang,Penang,Port Klang,Singapore,Nansha,Xiamen,Qingdao,Xingang", "ship_details": "CMA CGM CORAL, 4404; CMA CGM EIFFEL, 4404; CMA CGM LISBON, 4245; NEOKASTRO, 4178; CMA CGM AMBER, 4404; CMA CGM CAIMEP, 4256", "code": "KCM2S", "is_kmtc": false}, {"no": 184, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "KMTC / ONE / SITC / YM", "operators": "KMTC / ONE / SITC / YM", "service": "Korea China Malaysia 3 (KCM3) / Korea China Straits (KCS) /  West Malaysia (FEM2) / Korea-China-SE Asia Express (KCX)", "ships_raw": "4 x 2650", "num_ships": 4, "teu_size": 2650, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Busan,Shanghai,Xiamen,Singapore,Port Klang Westport,Laem Chabang,Haiphong,Shekou,Busan", "ship_details": "YM COOPERATION, 2940; AS PATRIA, 2526; CALLAO BRIDGE, 2450; MARIA C, 2664", "code": "KCM3", "is_kmtc": true}, {"no": 185, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "KMTC / Namsung / CK Line", "operators": "KMTC / Namsung", "service": "Korea-Haiphong service (KHP)", "ships_raw": "2 x 1690", "num_ships": 2, "teu_size": 1690, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Incheon,Busan,Ulsan,Haiphong,Shekou,Incheon", "ship_details": "STARSHIP TAURUS, 1800; KMTC ULSAN, 1585", "code": "KHP", "is_kmtc": true}, {"no": 186, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "Heung-A / Sinokor / KMTC", "operators": "Heung-A / Sinokor / KMTC", "service": "KMTC Heung-A Sinokor Thailand 1 (KHS1)/Korea-Hochiminh Service 1 (KHS 1)", "ships_raw": "3 x 1730", "num_ships": 3, "teu_size": 1730, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Ulsan,Kwangyang,Ho Chi Minh City,Laem Chabang,Bangkok,Laem Chabang,Ho Chi Minh City,Busan", "ship_details": "HEUNG-A HOCHIMINH, 1785; KMTC PUSAN, 1585; SAWASDEE INCHEON, 1809", "code": "KHS1", "is_kmtc": true}, {"no": 187, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "SMLine / Dong Young", "operators": "SMLine / Dong Young", "service": "Korea Haiphong Express (KHX)", "ships_raw": "2 x 1070", "num_ships": 2, "teu_size": 1070, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Incheon,Kwangyang,Busan,Haiphong,Xiamen,Incheon", "ship_details": "SM TOKYO, 1118; PEGASUS DREAM, 1023", "code": "KHX", "is_kmtc": false}, {"no": 188, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "KMTC / Sinokor / Heung-A", "operators": "KMTC / Sinokor / Heung-A", "service": "Korea-Indonesia 1 (KI 1)", "ships_raw": "4 x 2470", "num_ships": 4, "teu_size": 2470, "port": "Both", "terminal": "DGT/HKTG", "rotation": "Kwangyang,Ulsan,Busan,Hong Kong,Singapore,Jakarta,Surabaya,Hong Kong,Kwangyang", "ship_details": "KMTC SHIMIZU, 2556; TIANJIN VOYAGER, 2782; KMTC HOCHIMINH, 2824; BELAWAN, 1708", "code": "KI1", "is_kmtc": true}, {"no": 189, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "CMA CGM (CNC) / CK Line / PIL / SeaLead", "operators": "CMA CGM (CNC) / CK Line / PIL / SeaLead", "service": "Korea Indonesia 8 (KI8) / China Indonesia Korea (CIK) / Korea China Indonesia (KCI) / Intra Asia Service (SEA7)", "ships_raw": "4 x 2360", "num_ships": 4, "teu_size": 2360, "port": "Busan New Port", "terminal": "DGT", "rotation": "Busan,Incheon,Shanghai,Ningbo,Jakarta,Semarang,Ho Chi Minh City,Busan", "ship_details": "KOTA NASRAT, 1802; SKY PRIDE, 2693; JIN SHUN HE, 2113; CNC PANTHER, 2822", "code": "KI8", "is_kmtc": false}, {"no": 190, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "HMM", "operators": "HMM", "service": "Korea Indonesia Service (KIS)", "ships_raw": "4 x 2510", "num_ships": 4, "teu_size": 2510, "port": "Busan New Port", "terminal": "HPNT", "rotation": "Incheon,Busan,Shanghai,Ningbo,Jakarta,Surabaya,Incheon", "ship_details": "HMM CEBU, 2478; HMM DAVAO, 2378; HMM MOMBASA, 2786; HMM MANILA, 2378", "code": "KIS", "is_kmtc": false}, {"no": 191, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "KMTC", "operators": "KMTC", "service": "Korea-China-Malaysia service (KMSK)", "ships_raw": "3 x 2210", "num_ships": 3, "teu_size": 2210, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Pohang,Ulsan,Kwangyang,Shanghai,Singapore,Port Klang Northport,Penang,Singapore,Hong Kong,Shanghai,Busan,Pohang", "ship_details": "ZHONG GU YING KOU, 2518; KMTC KEELUNG, 1585; ZHONG GU PENG LAI, 2518", "code": "KMS3", "is_kmtc": true}, {"no": 192, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "KMTC / Namsung", "operators": "KMTC / Namsung", "service": "Korea Philippines Express (KPX) / Korea Manila Vietnam (KMV)", "ships_raw": "3 x 1730", "num_ships": 3, "teu_size": 1730, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Incheon,Pyongtaek,Kwangyang,Pohang,Busan,Manila North,Ho Chi Minh City,Hong Kong,Shekou,Incheon", "ship_details": "STARSHIP DRACO, 1607; KMTC LAEM CHABANG, 1785; KMTC OSAKA, 1809", "code": "KPX", "is_kmtc": true}, {"no": 193, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "KMTC / CK Line", "operators": "KMTC / CK Line", "service": "Korea Shanghai Haiphong (KSH)", "ships_raw": "2 x 1050", "num_ships": 2, "teu_size": 1050, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Busan,Kwangyang,Shanghai,Haiphong,Shantou,Fuzhou,Busan", "ship_details": "SUNNY ACACIA, 1103; SKY IRIS, 1000", "code": "KSH", "is_kmtc": true}, {"no": 194, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "Korea Shipping Partnership (CK Line/KMTC/Namsung/Pan Continental/Pan Ocean/Sinokor/SMLine)", "operators": "CK Line / Pan Ocean", "service": "Korea Shipping Thailand service (KST)", "ships_raw": "3 x 1800", "num_ships": 3, "teu_size": 1800, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Incheon,Busan,Ho Chi Minh City,Laem Chabang,Bangkok,Laem Chabang,Ho Chi Minh City,Incheon", "ship_details": "KMTC POHANG, 1809; SAWASDEE RIGEL, 1809; PANCON CHAMPION, 1785", "code": "KST", "is_kmtc": true}, {"no": 195, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "Evergreen", "operators": "Evergreen", "service": "Korea Taiwan Haiphong service (KTH)", "ships_raw": "3 x 1930", "num_ships": 3, "teu_size": 1930, "port": "Busan New Port", "terminal": "DGT", "rotation": "Hakata,Kwangyang,Busan,Incheon,Qingdao,Taipei,Kaohsiung,Haiphong,Kaohsiung,Taipei,Hakata", "ship_details": "EVER CLEVER, 1984; GREEN CLARITY, 1809; EVER CONFORM, 1984", "code": "KTH", "is_kmtc": false}, {"no": 196, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "KMTC / Sinokor", "operators": "KMTC / Sinokor", "service": "Korea Thailand Service (KTS / KTS1)", "ships_raw": "3 x 1740", "num_ships": 3, "teu_size": 1740, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Busan,Ulsan,Hong Kong,Ho Chi Minh City,Laem Chabang,Bangkok,Laem Chabang,Hong Kong,Shekou,Keelung,Busan", "ship_details": "KMTC SINGAPORE, 1626; SAWASDEE BALTIC, 1809; KMTC BANGKOK, 1785", "code": "KTS", "is_kmtc": true}, {"no": 197, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "WH", "operators": "WH", "service": "Korea-Vietnam Service (KVS)", "ships_raw": "3 x 2870", "num_ships": 3, "teu_size": 2870, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Incheon,Kwangyang,Busan,Ulsan,Taipei,Taichung,Xiamen,Ho Chi Minh City,Port Klang Westport,Port Klang Northport,Ho Chi Minh City,Kaohsiung,Taichung,Taipei,Incheon", "ship_details": "WAN HAI 372, 3055; WAN HAI 360, 3013; WAN HAI 308, 2535", "code": "KVS", "is_kmtc": false}, {"no": 198, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "KMTC / Namsung / Pan Continental", "operators": "KMTC / Namsung / Pan Continental", "service": "Korea Vietnam Thailand (KVT)", "ships_raw": "3 x 1780", "num_ships": 3, "teu_size": 1780, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Kwangyang,Busan,Hong Kong,Ho Chi Minh City,Laem Chabang,Bangkok,Laem Chabang,Ho Chi Minh City,Kwangyang", "ship_details": "KMTC JAKARTA, 1626; STARSHIP URSA, 1891; PANCON BRIDGE, 1809", "code": "KVT", "is_kmtc": true}, {"no": 199, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "HMM", "operators": "HMM", "service": "Korea Vietnam Express (KVX)", "ships_raw": "4 x 1840", "num_ships": 4, "teu_size": 1840, "port": "Busan New Port", "terminal": "HPNT", "rotation": "Busan,Shanghai,Ningbo,Ho Chi Minh City,Sihanoukville,Laem Chabang,Singapore,Ho Chi Minh City,Busan", "ship_details": "HMM HARMONY, 1875; HMM MIRACLE, 1875; HMM HARVEST, 1808; HMM HERITAGE, 1808", "code": "KVX1", "is_kmtc": false}, {"no": 200, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "KMTC / CKL / Pan Ocean", "operators": "KMTC / CKL / Pan Ocean", "service": "Korea Thailand Express (KTX)", "ships_raw": "3 x 1810", "num_ships": 3, "teu_size": 1810, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Incheon,Busan,Shanghai,Ho Chi Minh City,Laem Chabang,Bangkok,Laem Chabang,Ho Chi Minh City,Incheon", "ship_details": "SKY RAINBOW, 1809; POS SINGAPORE, 1811; SKY SUNSHINE, 1809", "code": "KVX1", "is_kmtc": true}, {"no": 201, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "Namsung / ONE / PIL / TSL / KMTC", "operators": "Namsung / ONE / PIL / TSL / KMTC", "service": "New Fareast Straits/Korea China Straits 2/Korea China Straits Service / Korea Malaysia Vietnam 2 (NFS/KC2/KCS/KMV2/KCM4)", "ships_raw": "5 x 2700", "num_ships": 5, "teu_size": 2700, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Incheon,Qingdao,Shanghai,Singapore,Port Klang Westport,Ho Chi Minh City,Shekou,Busan", "ship_details": "KOTA GAYA, 2754; STARSHIP MERCURY, 2556; KMTC PENANG, 2806; NYK ISABEL, 2664", "code": "NFS", "is_kmtc": true}, {"no": 202, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "KMTC / CK Line / Namsung", "operators": "KMTC / CK Line / Namsung", "service": "New Korea-Thailand (NKT)", "ships_raw": "3 x 1830", "num_ships": 3, "teu_size": 1830, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Incheon,Kwangyang,Busan,Hong Kong,Shekou,Laem Chabang,Bangkok,Laem Chabang,Ho Chi Minh City,Incheon", "ship_details": "KMTC NAGOYA, 1809; STARSHIP AQUILA, 1800; SKY CHALLENGE, 1891", "code": "NKT", "is_kmtc": true}, {"no": 203, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "WH / IAL", "operators": "WH / IAL", "service": "New Super 5 Service (NS5)", "ships_raw": "4 x 3040", "num_ships": 4, "teu_size": 3040, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Port Klang Northport,Singapore,Dong Nai,Shekou,Tokyo,Yokohama,Chiba,Busan,Xiamen,Shekou,Nansha,Port Klang Northport", "ship_details": "WAN HAI 325, 3055; INTERASIA TACTIC, 3055; WAN HAI 365, 3055; WAN HAI 332, 2988", "code": "NS5", "is_kmtc": false}, {"no": 204, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "Evergreen", "operators": "Evergreen", "service": "North East Asia-South East Asia Service B (NSB)", "ships_raw": "4 x 3110", "num_ships": 4, "teu_size": 3110, "port": "Busan New Port", "terminal": "DGT", "rotation": "Kwangyang,Busan,Shanghai,Kaohsiung,Pasir Gudang,Port Klang Northport,Port Klang Westport,Tanjung Pelepas,Singapore,Manila North,Kaohsiung,Kwangyang", "ship_details": "EVER VERVE, 3110; EVER VERT, 3110; EVER VERSE, 3110; EVER VISTA, 3110", "code": "NSB", "is_kmtc": false}, {"no": 205, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "Sinokor / Dongjin / Namsung", "operators": "Sinokor / Dongjin / Namsung", "service": "Korea-HK-Thailand-HCMC / New Thailand Express (NTX)", "ships_raw": "3 x 1810", "num_ships": 3, "teu_size": 1810, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Incheon,Pyongtaek,Kwangyang,Busan,Ho Chi Minh City,Laem Chabang,Bangkok,Laem Chabang,Ho Chi Minh City,Incheon", "ship_details": "DONGJIN CONFIDENT, 1809; PEGASUS PROTO, 1809; SAWASDEE DENEB, 1809", "code": "NTX", "is_kmtc": false}, {"no": 206, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "Sinokor / Heung-A", "operators": "Sinokor / Heung-A", "service": "Pusan China Indonesia (PCI)", "ships_raw": "4 x 2420", "num_ships": 4, "teu_size": 2420, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Kwangyang,Shanghai,Jakarta,Surabaya,Ho Chi Minh City,Shanghai,Busan", "ship_details": "SAWASDEE ALTAIR, 1809; HOCHIMINH VOYAGER, 2553; QINGDAO VOYAGER, 2782; HAPPY LUCKY, 2553", "code": "PCI", "is_kmtc": false}, {"no": 207, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "Sinokor", "operators": "Sinokor", "service": "Pusan China Indonesia 2 (PCI2)", "ships_raw": "5 x 1710", "num_ships": 5, "teu_size": 1710, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Ulsan,Kwangyang,Shanghai,Jakarta,Ho Chi Minh City,Ningbo,Shanghai,Busan", "ship_details": "SAWASDEE VEGA, 1809; HEUNG-A BANGKOK, 1785; YEOSU VOYAGER, 2548; PACIFIC TIANJIN, 698", "code": "PCI2", "is_kmtc": false}, {"no": 208, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "MSC", "operators": "MSC", "service": "PERTIWI Service", "ships_raw": "7 x 4560", "num_ships": 7, "teu_size": 4560, "port": "Busan New Port", "terminal": "PNIT", "rotation": "Busan,Dalian,Xingang,Incheon,Qingdao,DaChan Bay,Cai Mep,Laem Chabang,Singapore,Panjang,Jakarta,Singapore,Tanjung Pelepas,Cai Mep,Busan", "ship_details": "MSC FREEPORT, 5089; MSC BREMERHAVEN V, 4504; MSC PRECISION V, 4606; MSC GINA, 4056", "code": "PERTWI", "is_kmtc": false}, {"no": 209, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "KMTC", "operators": "KMTC", "service": "Philippines Japan Express (PJX) - Southbound", "ships_raw": "3 x 1030", "num_ships": 3, "teu_size": 1030, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Manila,Busan,Tokyo,Chiba,Yokohama,Ulsan,Busan,Manila", "ship_details": "SUNNY LAVENDER, 1000; SUNNY ROSE, 1000; SUNNY FREESIA, 1096", "code": "PJS", "is_kmtc": true}, {"no": 210, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "MSC", "operators": "MSC", "service": "Sambar", "ships_raw": "5 x 4620", "num_ships": 5, "teu_size": 4620, "port": "Busan New Port", "terminal": "PNIT", "rotation": "Dalian,Incheon,Xingang,Qingdao,DaChan Bay,Dong Nai,Laem Chabang,Singapore,Penang,Pasir Gudang,Singapore,Tanjung Pelepas,Cai Mep,Busan,Dalian", "ship_details": "MSC LYSE V, 4872; MSC REGINA, 4056; MSC ROSHNEY V, 4888; MSC ALYSSA, 4367; MSC JERSEY, 4896", "code": "Sambar", "is_kmtc": false}, {"no": 211, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "KMTC / Sinokor / CK Line", "operators": "KMTC / Sinokor / CK Line", "service": "Vietnam-Thailand service (VTS)", "ships_raw": "3 x 1840", "num_ships": 3, "teu_size": 1840, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Busan,Kwangyang,Hong Kong,Ho Chi Minh City,Laem Chabang,Bangkok,Laem Chabang,Hong Kong,Xiamen,Busan", "ship_details": "SAWASDEE SUNRISE, 1809; KMTC TAIPEIS, 1804; SKY ORION, 1900", "code": "VTS", "is_kmtc": true}, {"no": 212, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "SMLine / Namsung / Pan Ocean", "operators": "SMLine / Namsung / Pan Ocean", "service": "Vietnam Thailand Express (VTX)", "ships_raw": "3 x 1790", "num_ships": 3, "teu_size": 1790, "port": "Busan North Port", "terminal": "HKTG", "rotation": "Kwangyang,Busan,Shanghai,Ho Chi Minh City,Bangkok,Laem Chabang,Ho Chi Minh City,Kwangyang", "ship_details": "SM JAKARTA, 1679; STARSHIP PEGASUS, 1891; POS LAEMCHABANG, 1811", "code": "VTX", "is_kmtc": false}, {"no": 213, "trade": "SE Asia", "sector": "NEA-SEA", "alliance": "SITC", "operators": "SITC", "service": "Japan-China-Vietnam-Thailand service (VTX1)", "ships_raw": "4 x 1790", "num_ships": 4, "teu_size": 1790, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Sakai Senboku,Osaka,Kobe,Busan,Shanghai,Xiamen,Ho Chi Minh City,Sihanoukville,Laem Chabang,Xiamen,Shanghai,Sakai Senboku", "ship_details": "SITC MINGDE, 1781; SITC SHANDONG, 1808; SITC XIN, 1781; SITC SHANGHAI, 1808", "code": "VTX1", "is_kmtc": false}, {"no": 214, "trade": "USEC", "sector": "FE-ECNA", "alliance": "OCEAN Alliance", "operators": "COSCO Shipping", "service": "USEC1 (Manhattan Bridge (MANB) / AWE2 / ECX2 / NUE2)", "ships_raw": "12 x 13430", "num_ships": 12, "teu_size": 13430, "port": "Busan New Port", "terminal": "BNCT", "rotation": "Qingdao,Ningbo,Shanghai,Busan,Panama Canal,New York,Norfolk,Savannah,Panama Canal,Xingang,Qingdao", "ship_details": "COSCO SHIPPING CAMELLIA, 13800; SEASPAN PRIDE, 13092; OOCL FRANCE, 13208; COSCO SHIPPING ORCHID, 13800; COSCO SHIPPING LOTUS, 13800; OOCL KOREA, 13208; COSCO SHIPPING AZALEA, 13800; COSCO HARMONY, 13092; COSCO FAITH, 13092", "code": "AWE2", "is_kmtc": false}, {"no": 215, "trade": "USEC", "sector": "FE-ECNA", "alliance": "OCEAN Alliance", "operators": "OMA CGM", "service": "Chesapeake Bay Express (CBX) / AWE7 / ECC3", "ships_raw": "13 x 8750", "num_ships": 13, "teu_size": 8750, "port": "Busan New Port", "terminal": "BNCT", "rotation": "Port Klang,Haiphong,Yantian,Ningbo,Shanghai,Busan,Yokohama,Norfolk,Savannah,Charleston,Miami,Port Klang", "ship_details": "CMA CGM TANCREDI, 8721; MH PEGASUS, 7092; APL HOUSTON, 9326; CMA CGM LITANI, 10622; BELITA, 8533; CMA CGM LA TRAVIATA, 8488; CMA CGM FORT DIAMANT, 7377; KOI, 8586; CMA CGM NIAGARA, 10034; CMA CGM ATTILA, 8721; CMA CGM SAMSON, 8721", "code": "CBX", "is_kmtc": false}, {"no": 216, "trade": "USEC", "sector": "FE-ECNA", "alliance": "Premier Alliance", "operators": "HMM/ONE", "service": "EC1", "ships_raw": "12 x 9320", "num_ships": 12, "teu_size": 9320, "port": "Busan New Port", "terminal": "HPNT", "rotation": "Kaohsiung,Yantian,Shanghai,Ningbo,Busan,New York,Norfolk,Savannah,Balboa,Kaohsiung", "ship_details": "CONTI CONTESSA, 8073; ONE CONTINUITY, 8110; HYUNDAI EARTH, 10081; CONTI ANNAPURNA, 8189; ONE CONTRIBUTION, 8560; ONE COMPETENCE, 8110; MOL CHARISMA, 8110; YM TRUST, 11714; YM TRANQUILITY, 11714; HYUNDAI SATURN, 10081; ONE HANOI, 8974; HYUNDAI EARTH, 10081", "code": "EC1E", "is_kmtc": false}, {"no": 217, "trade": "USEC", "sector": "FE-ECNA", "alliance": "Premier Alliance", "operators": "HMM/ONE", "service": "EC2", "ships_raw": "12 x 13650", "num_ships": 12, "teu_size": 13650, "port": "Busan New Port", "terminal": "HPNT", "rotation": "Busan,Xiamen,Yantian,Ningbo,Shanghai,Busan,Manzanillo (PAN),Savannah,Charleston,Jacksonville,Manzanillo (PAN),Busan", "ship_details": "YM WELCOME, 14198; ONE AQUILA, 14052; ONE SPRINTER, 13828; ONE COLUMBA, 14052; HMM AMETHYST, 13788; HMM VICTORY, 13154; ONE CRANE, 14026; YM WIND, 14078; ONE IBIS, 14026; HMM SAPPHIRE, 13253; YM TRILLION, 11714", "code": "EC2E/EC2W", "is_kmtc": false}, {"no": 218, "trade": "USEC", "sector": "FE-ECNA", "alliance": "Premier Alliance/Evergreen", "operators": "ONE/YML/Evergreen", "service": "East Coast 4 (EC4) / Asia-US Gulf (AUG)", "ships_raw": "12 x 7660", "num_ships": 12, "teu_size": 7660, "port": "Busan New Port", "terminal": "HJNC", "rotation": "Kaohsiung,Hong Kong,Yantian,Ningbo,Shanghai,Busan,Houston,Mobile,Balboa,Kaohsiung", "ship_details": "ONE MODERN, 6724; YM MODERATION, 6258; MOL COURAGE, 8110; CONTI CORTESIA, 8073; MOL CELEBRATION, 8110; EVER SALUTE, 7024; CONTI CONTESSA, 8073; CORNEILLE, 6740; EVER SAFETY, 7024; CONTI ANNAPURNA, 8189; MOL CREATION, 8110; ONE COSMOS, 8110; ONE HUMEN, 9040", "code": "EC4E", "is_kmtc": false}, {"no": 219, "trade": "USEC", "sector": "FE-ECNA", "alliance": "MSC / Zim", "operators": "MSC", "service": "Empire / Zim North Star (ZNS)", "ships_raw": "12 x 7430", "num_ships": 12, "teu_size": 7430, "port": "Busan New Port", "terminal": "BCT", "rotation": "Busan,Qingdao,Shanghai,Ningbo,Busan,New York,Norfolk,Baltimore,Busan", "ship_details": "MSC MUMBAI VIII, 8814; MSC ILLINOIS VII, 6648; MSC BOSPHORUS, 6492; GSL MYNY, 6008; CONTI COURAGE, 8073; MSC BRASILIA VII, 6703; MSC LEO VI, 6422; KURE, 7403; MSC RIKKU, 8566; MSC KUMSAL, 8533; MANZANILLO BRIDGE, 8030", "code": "EMPIRE", "is_kmtc": false}, {"no": 220, "trade": "USEC", "sector": "FE-ECNA", "alliance": "Gemini", "operators": "Hapag-Lloyd", "service": "US2/TP12", "ships_raw": "13 x 9890", "num_ships": 13, "teu_size": 9890, "port": "Busan New Port", "terminal": "PNC", "rotation": "Ningbo,Shanghai,Busan,Cartagena (Col),New York,Norfolk,Cartagena (Col),Los Angeles,Ningbo", "ship_details": "GJERTRUD MAERSK, 11078; NHAVA SHEVA EXPRESS, 9954; OSAKA EXPRESS, 8750; NAVIOS UNISON, 9954; COYHAIQUE, 11219; NAVIOS CONSTELLATION, 9954; KUALA LUMPUR EXPRESS, 8750; TSINGTAO EXPRESS, 8750; MUNDRA EXPRESS, 9954; KUALA LUMPUR EXPRESS, 8750; CORCOVADO, 11219; COCHRANE, 11219; KANDLA EXPRESS, 9954; NANSHA EXPRESS, 10100; COLOMBO EXPRESS, 8750; MUNDRA EXPRESS, 9954", "code": "GUSEC2E", "is_kmtc": false}, {"no": 221, "trade": "USEC", "sector": "FE-ECNA", "alliance": "Gemini", "operators": "Maersk", "service": "US3/TP15", "ships_raw": "13 x 8220", "num_ships": 13, "teu_size": 8220, "port": "Busan New Port", "terminal": "PNC", "rotation": "Shanghai,Ningbo,Yantian,Busan,Lazaro Cardenas,Houston,Mobile,Cartagena (Col),Balboa,Shanghai", "ship_details": "GSL CHRISTEN, 6840; GSL SOFIA, 8544; MAERSK LAVRAS, 8850; MAERSK SAIGON, 8400; MAERSK SANTANA, 8466; MAERSK ATHABASCA, 8440; MARIA Y, 8650; TANGIER MAERSK, 9016; MAERSK SANA, 8466; GSL EFFIE, 8544; GSL SOFIA, 8544; SAN FERNANDO, 9549; LICA MAERSK, 4500", "code": "GUSEC3", "is_kmtc": false}, {"no": 222, "trade": "USEC", "sector": "FE-ECNA", "alliance": "MSC / Zim", "operators": "MSC", "service": "Lone Star Express / Zim South Lotus (ZSL)", "ships_raw": "11 x 8990", "num_ships": 11, "teu_size": 8990, "port": "Busan New Port", "terminal": "BCT", "rotation": "Cai Mep,Yantian,Ningbo,Shanghai,Busan,Mobile,Houston,Tampa,Miami,Freeport (Bah),Singapore,Cai Mep", "ship_details": "MSC JAMBOREE IX, 8814; ROTTERDAM, 10062; MSC RIDA VIII, 8566; SANTA LINEA, 9178; MSC GREENWICH, 8478; ANTWERP, 10062; MSC JAVELIN IX, 8814; MSC CALAIS, 7872; TIANJIN, 10062; MSC AGADIR, 8762; MSC UNITED VIII, 8204", "code": "LONEST", "is_kmtc": false}, {"no": 223, "trade": "USEC", "sector": "FE-ECNA", "alliance": "OCEAN Alliance", "operators": "Evergreen", "service": "USEC4 (Vespucci / AWE1 / ECC2 / NUE)", "ships_raw": "11 x 12440", "num_ships": 11, "teu_size": 12440, "port": "Busan New Port", "terminal": "BNCT", "rotation": "Qingdao,Shanghai,Ningbo,Busan,Panama Canal,Colon,Savannah,Charleston,Boston (US),New York,Colon (Coco Solo),Panama Canal,Qingdao", "ship_details": "TOLEDO TRIUMPH, 13656; EVER FAST, 11888; EVER FOND, 11888; EVER FULL, 11888; EVER FORE, 11888; EVER FOCUS, 12118; THESEUS, 14424; EVER FRANK, 12118; EVER FOREVER, 12118; TOKYO TRIUMPH, 13656; EVER FORWARD, 12118; EVER FUTURE, 12118; EVER FAVOR, 11888", "code": "NUE", "is_kmtc": false}, {"no": 224, "trade": "USEC", "sector": "FE-ECNA", "alliance": "OCEAN Alliance", "operators": "CMA CGM", "service": "USEC6 (Pacific Express 3(PEX3) / GME2 / GCC1)", "ships_raw": "12 x 8330", "num_ships": 12, "teu_size": 8330, "port": "Busan New Port", "terminal": "BNCT", "rotation": "Singapore,Cai Mep,Shekou,Ningbo,Shanghai,Busan,Panama Canal,Houston,Mobile,New Orleans,Suez Canal,Singapore", "ship_details": "CMA CGM TAORMINA, 8048; CMA CGM FIGARO, 8469; NORTHERN JUVENILE, 8811; CMA CGM RHONE, 9365; CMA CGM LEGACY, 7418; CMA CGM DALILA, 8469; CMA CGM ALMAVIVA, 8469; CMA CGM AMAZON, 9288; CMA CGM BAALBECK, 8048; APL DANUBE, 9365; CMA CGM ORFEO, 9953; MSC BERN V, 4300", "code": "PE3OA", "is_kmtc": false}, {"no": 225, "trade": "USEC", "sector": "FE-ECNA", "alliance": "MSC / Zim", "operators": "Zim", "service": "Zim Container Service Pacific (ZCP) / Amberjack", "ships_raw": "12 x 13450", "num_ships": 12, "teu_size": 13450, "port": "Busan New Port", "terminal": "BCT", "rotation": "Nansha,Yantian,Xiamen,Ningbo,Shanghai,Busan,Manzanillo (Pan),Kingston,Savannah,Charleston,Wilmington,Kingston,Nansha", "ship_details": "ZIM THAILAND, 11714; ZIM MOUNT RAINIER, 15248; TIANJIN, 10062; ZIM MOUNT BLANC, 15248; ZIM MOUNT DENALI, 15248; ZIM MOUNT FUJI, 15248; ZIM MOUNT EVEREST, 15248; ZIM MOUNT VINSON, 15248; ZIM MOUNT OLYMPUS, 15248; ZIM MOUNT KILIMANJARO, 15248; ZIM MOUNT ELBRUS, 15248; ZIM SAMMY OFER, 15248; SAPPHIRE, 7000; ZIM TOPAZ, 7000", "code": "ZCP/ZCPW", "is_kmtc": false}, {"no": 226, "trade": "USWC", "sector": "FE-WCNA (Hawaii)", "alliance": "ONE", "operators": "ONE", "service": "Asia Hawaii Express (AHX)", "ships_raw": "3 x 1030", "num_ships": 3, "teu_size": 1030, "port": "Busan New Port", "terminal": "HJNC", "rotation": "Busan,Yokohama,Honolulu,Busan", "ship_details": "KALAMAZOO, 1042; NOBILITY, 1012; ASIATIC PRIDE, 1049", "code": "AHX", "is_kmtc": false}, {"no": 227, "trade": "USWC", "sector": "FE-WCNA", "alliance": "KMTC", "operators": "KMTC", "service": "America West Coast (AWC)", "ships_raw": "3 x 2670", "num_ships": 3, "teu_size": 2670, "port": "Busan New Port", "terminal": "DGT", "rotation": "Ningbo,Shanghai,Busan,Long Beach,Busan,Qingdao,Ningbo", "ship_details": "KMTC SHENZHEN, 2778; KMTC SEOUL, 2556", "code": "AWCE/AWCW", "is_kmtc": true}, {"no": 228, "trade": "USWC", "sector": "FE-WCNA", "alliance": "MSC / Zim", "operators": "MSC", "service": "Chinook", "ships_raw": "10 x 8200", "num_ships": 10, "teu_size": 8200, "port": "Busan New Port", "terminal": "BCT/PNIT", "rotation": "Cai Mep,Haiphong,Yantian,Ningbo,Shanghai,Qingdao,Busan,Seattle,Prince Rupert,Vancouver (BC),Busan,Cai Mep", "ship_details": "CATHERINE C, 8010; MSC SOLA, 11660; EXPRESS ATHENS, 10114; MSC ANTIGUA, 8762; MSC TEXAS, 8533; MSC PINA, 9580; VANTAGE, 354; MSC SHAY, 8566", "code": "CHINKE/CHINK", "is_kmtc": false}, {"no": 229, "trade": "USWC", "sector": "FE-WCNA", "alliance": "OCEAN Alliance", "operators": "CMA CGM", "service": "PNW1 - Columbus PNW (CPNW/MPNW/PNW2)", "ships_raw": "8 x 8350", "num_ships": 8, "teu_size": 8350, "port": "Busan New Port", "terminal": "BNCT", "rotation": "Yantian,Xiamen,Ningbo,Shanghai,Busan,Seattle,Vancouver (BC),Kwangyang,Yantian", "ship_details": "CMA CGM BYBLOS, 8048; APL CHONGQING, 10106; CMA CGM CLEVELAND, 6552; LOTUS A, 8586; MH PERSEUS, 7092; CMA CGM ARKANSAS, 10034; CMA CGM SHANGHAI, 7831; CYPRESS, 8586", "code": "COBOA", "is_kmtc": false}, {"no": 230, "trade": "USWC", "sector": "FE-WCNA", "alliance": "OCEAN Alliance", "operators": "Evergreen", "service": "PSW5 - Hangzhou Bay Bridge / China Pacific Southwest (PSW5 / HBB / AAC2 / CPS / PCN3)", "ships_raw": "7 x 9840", "num_ships": 7, "teu_size": 9840, "port": "Busan New Port", "terminal": "BNCT", "rotation": "Qingdao,Shanghai,Ningbo,Los Angeles,Oakland,Busan,Qingdao", "ship_details": "EVER FORWARD, 12118; EVER LEGION, 9466; EVER LASTING, 9466; EVER LOGIC, 9466; EVER LEADING, 9466; EVER LEGACY, 9466; EVER LEADER, 9466", "code": "CPS", "is_kmtc": false}, {"no": 231, "trade": "USWC", "sector": "FE-WCNA", "alliance": "SMLine", "operators": "SM Line", "service": "China Pacific Express (CPX)", "ships_raw": "6 x 6660", "num_ships": 6, "teu_size": 6660, "port": "Busan New Port", "terminal": "HJNC", "rotation": "Qingdao,Shanghai,Ningbo,Busan,Long Beach,Portland(OR),Busan,Kwangyang,Qingdao", "ship_details": "SM KWANGYANG, 6655; SM YANTIAN, 6655; SM LONG BEACH, 6655; SM NINGBO, 6655; SM BUSAN, 6655; SM SHANGHAI, 6655", "code": "CPXE/CPXW", "is_kmtc": false}, {"no": 232, "trade": "USWC", "sector": "FE-WCNA", "alliance": "APL", "operators": "APL", "service": "Eagle Express 1 (EX1)", "ships_raw": "7 x 5600", "num_ships": 7, "teu_size": 5600, "port": "Busan New Port", "terminal": "BNCT", "rotation": "Qingdao,Shanghai,Busan,Los Angeles,Oakland,Yokohama,Naha,Busan,Qingdao", "ship_details": "PRESIDENT REAGAN, 5598; PRESIDENT JQ ADAMS, 5598; PRESIDENT GRANT, 5598; PRESIDENT MONROE, 5598; PRESIDENT CARTER, 5598; PRESIDENT LB JOHNSON, 5598; PRESIDENT BUSH, 5598", "code": "EX1E/EX1W", "is_kmtc": false}, {"no": 233, "trade": "USWC", "sector": "FE-WCNA", "alliance": "APL", "operators": "CMA CGM", "service": "Eagle Express X (EXX)", "ships_raw": "7 x 5090", "num_ships": 7, "teu_size": 5090, "port": "Busan New Port", "terminal": "BNCT", "rotation": "Ningbo,Shanghai,Los Angeles,Oakland,Honolulu/Dutch Harbor,Busan/Kwangyang,Ningbo", "ship_details": "CMA CGM SWORDFISH, 5095; CMA CGM WHITE SHARK, 5095; CMA CGM NEW JERSEY, 5095; CMA CGM GEORGIA, 5095; CMA CGM TARPON, 5095; CMA CGM MANTA RAY, 5090", "code": "EXX", "is_kmtc": false}, {"no": 234, "trade": "USWC", "sector": "FE-WCNA", "alliance": "Premier Alliance", "operators": "ONE / HMM / YML", "service": "Far East Pacific 2 (FP2) eastbound", "ships_raw": "22 x 11850", "num_ships": 22, "teu_size": 11850, "port": "Busan New Port", "terminal": "HJNC", "rotation": "Busan,Kaohsiung,Shanghai,Ningbo,Yantian,Singapore,Southampton,Rotterdam,Southampton,Singapore,Laem Chabang,Cai Mep,Yantian,Busan,Tacoma,Vancouver (BC),Busan", "ship_details": "ONE AMAZON, 11923; ONE HUMBER, 9040; ONE OWL, 14026; YM TUTORIAL, 11714; HYUNDAI PLUTO, 10081; YM TOPMOST, 11714; HMM GARAM, 16010; YM TRIUMPH, 12726; YM TROPHY, 11714; SEASPAN ADONIS, 9592; YM WONDERLAND, 14220", "code": "FP2E", "is_kmtc": false}, {"no": 235, "trade": "USWC", "sector": "FE-WCNA", "alliance": "Gemini", "operators": "Maersk", "service": "WC2/TP8", "ships_raw": "8 x 10860", "num_ships": 8, "teu_size": 10860, "port": "Busan New Port", "terminal": "PNC", "rotation": "Qingdao,Busan,Shanghai,Los Angeles,Oakland,Qingdao", "ship_details": "GUNHILDE MAERSK, 9700; GUNDE MAERSK, 11008; GERNER MAERSK, 11008; GERD MAERSK, 11078; GEORG MAERSK, 11078; GERDA MAERSK, 11008; GUSTAV MAERSK, 11008; GUTHORM MAERSK, 11008", "code": "GUSWC2E", "is_kmtc": false}, {"no": 236, "trade": "USWC", "sector": "FE-WCNA", "alliance": "Gemini", "operators": "Maersk", "service": "WC3/TP1", "ships_raw": "8 x 8740", "num_ships": 8, "teu_size": 8740, "port": "Busan New Port", "terminal": "PNC", "rotation": "Yantian,Shanghai,Busan,Yokohama,Prince Rupert,Vancouver (BC),Yantian", "ship_details": "MAERSK SAN VICENTE, 9034; MAERSK STRALSUND, 8400; GSL LYDIA, 8544; GSL ALEXANDRA, 8544; NORTHERN JAGUAR, 8814; MAERSK LIRQUEN, 8850; GSL KALLIOPI, 7847; TAURANGA MAERSK, 9016; MAERSK STEPNICA, 9643", "code": "GUSWC3E", "is_kmtc": false}, {"no": 237, "trade": "USWC", "sector": "FE-WCNA", "alliance": "Gemini", "operators": "Hapag-Lloyd/Maersk", "service": "WC4/TP5", "ships_raw": "7 x 8760", "num_ships": 7, "teu_size": 8760, "port": "Busan New Port", "terminal": "PNC", "rotation": "Yokohama,Ningbo,Shanghai,Busan,Tacoma,Vancouver (BC),Yokohama", "ship_details": "VIENNA EXPRESS, 8750; SEASPAN AMAZON, 10010; FRANKFURT EXPRESS, 8750; KOSTAS K, 8650; BUDAPEST EXPRESS, 8750; SANTA BARBARA, 8194; MAERSK SARNIA, 8466; GSL SOFIA, 8544", "code": "GUSWC4E", "is_kmtc": false}, {"no": 238, "trade": "USWC", "sector": "FE-WCNA", "alliance": "Gemini", "operators": "Hapag-Lloyd/Maersk", "service": "WC5/TP7", "ships_raw": "6 x 7180", "num_ships": 6, "teu_size": 7180, "port": "Busan New Port", "terminal": "PNC", "rotation": "Yokohama,Busan,Ningbo,Los Angeles,Yokohama", "ship_details": "MISSOURI EXPRESS, 7323; HUDSON EXPRESS, 7323; POTOMAC EXPRESS, 7323; MAERSK KINLOSS, 6478; COLORADO EXPRESS, 7323; DELAWARE EXPRESS, 7323", "code": "GUSWC5E", "is_kmtc": false}, {"no": 239, "trade": "USWC", "sector": "FE-WCNA", "alliance": "Premier Alliance", "operators": "HMM/ONE", "service": "Mediterranean Pacific South 2 - Eastbound", "ships_raw": "22 x 13490", "num_ships": 22, "teu_size": 13490, "port": "Busan New Port", "terminal": "HPNT", "rotation": "Busan,Shanghai,Ningbo,Kaohsiung,Shekou,Singapore,Tangier,Valencia,Barcelona,Genoa,Fos,Tangier,Singapore,Laem Chabang,Cai Mep,Shanghai,Busan,Long Beach,Oakland,Busan", "ship_details": "ONE BLUE JAY, 14026; SAPPHIRE TOWER, 8772; ONE FANTASTIC, 15516; ONE MACKINAC, 13900; ONE FRUITION, 15258", "code": "MS2E", "is_kmtc": false}, {"no": 240, "trade": "USWC", "sector": "FE-WCNA", "alliance": "MSC", "operators": "MSC", "service": "Orient", "ships_raw": "7 x 9840", "num_ships": 7, "teu_size": 9840, "port": "Busan New Port", "terminal": "PNC", "rotation": "Busan,Qingdao,Ningbo,Shanghai,Long Beach,Oakland,Busan", "ship_details": "MSC IVANA, 11660; MSC UBERTY VIII, 8236; MSC DOMITILLE, 9411; MSC SENEGAL, 8100; MSC MUNDRA VIII, 8814; VALIANT, 8827; MSC EMANUELA, 13798", "code": "ORIENT E/ORINTW", "is_kmtc": false}, {"no": 241, "trade": "USWC", "sector": "FE-WCNA", "alliance": "OCEAN Alliance", "operators": "OOCL", "service": "PSW9 - Hibicus Express / Pacific China Central 1 (PSW9 / HIX / AAC4 / PCC1)", "ships_raw": "7 x 13280", "num_ships": 7, "teu_size": 13280, "port": "Busan New Port", "terminal": "BNCT", "rotation": "Ningbo,Shanghai,Busan,Long Beach,Busan,Ningbo", "ship_details": "OOCL SINGAPORE, 13208; OOCL BRUSSELS, 13208; COSCO BELGIUM, 13386; OOCL BERLIN, 13208; COSCO PORTUGAL, 13386; COSCO ITALY, 13386; OOCL POLAND, 13208", "code": "PCC1E/PCC1W", "is_kmtc": false}, {"no": 242, "trade": "USWC", "sector": "FE-WCNA", "alliance": "Premier Alliance", "operators": "HMM / YM", "service": "Pacific North 3 (PN3)", "ships_raw": "7 x 5480", "num_ships": 7, "teu_size": 5480, "port": "Busan New Port", "terminal": "HJNC/HPNT", "rotation": "Qingdao,Ningbo,Shanghai,Busan,Vancouver (BC),Tacoma,Busan,Qingdao", "ship_details": "HYUNDAI GOODWILL, 4728; HMM VANCOUVER, 6350; YM WEALTH, 5551; ONE MATRIX, 6724; YM COSMOS, 5551; HYUNDAI SUPREME, 4728; HYUNDAI FORWARD, 4728", "code": "PN3E/PN3W", "is_kmtc": false}, {"no": 243, "trade": "USWC", "sector": "FE-WCNA", "alliance": "SMLine", "operators": "SM Line", "service": "PNW Service (PNS)", "ships_raw": "6 x 4280", "num_ships": 6, "teu_size": 4280, "port": "Busan New Port", "terminal": "HJNC", "rotation": "Yantian,Ningbo,Shanghai,Busan,Seattle,Vancouver (BC),Busan,Yantian", "ship_details": "KOTA LUKIS, 4253; SM PORTLAND, 4228; SM TIANJIN, 4380; SM MUMBAI, 4253; SM SEOUL, 4255; SM QINGDAO, 4330", "code": "PNSE/PNSW", "is_kmtc": false}, {"no": 244, "trade": "USWC", "sector": "FE-WCNA", "alliance": "Westwood Shipping", "operators": "Westwood Shipping", "service": "N Asia-West Coast North America 1 - Japan (PNW1J)", "ships_raw": "4 x 2050", "num_ships": 4, "teu_size": 2050, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Pyoengtaek,Busan,Osaka,Nagoya,Tokyo,Everett,Seattle,Fraser Port,Vancouver (BC),Shimizu,Yokohama,Tokyo,Pyongtaek", "ship_details": "WESTWOOD RAINIER, 2048; WESTWOOD COLUMBIA, 2048; WESTWOOD OLYMPIA, 2048; WESTWOOD VICTORIA, 2048", "code": "PNW", "is_kmtc": false}, {"no": 245, "trade": "USWC", "sector": "FE-WCNA", "alliance": "Westwood Shipping", "operators": "Westwood Shipping", "service": "N Asia-West Coast North America 2 (PNW2)", "ships_raw": "3 x 2750", "num_ships": 3, "teu_size": 2750, "port": "Busan North Port", "terminal": "BPTS", "rotation": "Busan,Hakata,Osaka,Nagoya,Shimizu,Tokyo,Everett,Seattle,Fraser Port,Busan", "ship_details": "NADI CHIEF, 2750; LAUTOKA CHIEF, 2750; SUVA CHIEF, 2750", "code": "PNW", "is_kmtc": false}, {"no": 246, "trade": "USWC", "sector": "FE-WCNA", "alliance": "Premier Alliance", "operators": "HMM", "service": "Pacific South 6 (PS6)", "ships_raw": "8 x 13800", "num_ships": 8, "teu_size": 13800, "port": "Busan New Port", "terminal": "HJNC/HPNT", "rotation": "Busan,Kwangyang,Incheon,Shanghai,Ningbo,Kwangyang,Busan,Los Angeles,Oakland,Busan", "ship_details": "HMM TOPAZ, 13253; HMM AQUAMARINE, 13788; HMM EMERALD, 13788; HMM NURI, 16010; HMM DIAMOND, 13788; HMM OPAL, 13253; HMM RUBY, 13253; HMM TURQUOISE, 13253", "code": "PS6E/PS6W", "is_kmtc": false}, {"no": 247, "trade": "USWC", "sector": "FE-WCNA", "alliance": "COSCO / OOCL", "operators": "COSCO / OOCL", "service": "Pacific South China Express (PSX) / SEA3", "ships_raw": "6 x 8320", "num_ships": 6, "teu_size": 8320, "port": "Busan New Port", "terminal": "BNCT", "rotation": "Xiamen,Hong Kong,Yantian,Long Beach,Busan,Xiamen", "ship_details": "OOCL ROTTERDAM, 8063; OOCL ATLANTA, 8063; OOCL LONDON, 8063; XIN FEI ZHOU, 8533; OOCL UTAH, 8888", "code": "PSX", "is_kmtc": false}, {"no": 248, "trade": "WCSA", "sector": "FE-WCSA", "alliance": "Maersk", "operators": "Maersk", "service": "Asia-South America West Coast (AC2)", "ships_raw": "10 x 12480", "num_ships": 10, "teu_size": 12480, "port": "Busan New Port", "terminal": "PNC", "rotation": "Xingang,Qingdao,Busan,Ningbo,Shanghai,Tanjung Pelepas,Tangier Med,Port Said,Jeddah,Tangier Med,Singapore,Xingang", "ship_details": "MAERSK EDIRNE, 13102; MAERSK EVORA, 13568; MAERSK EDINBURGH, 13568; MAERSK SHIVLING, 9288; MAERSK EMERALD, 13102; MAERSK EINDHOVEN, 13568; MAERSK EUREKA, 13102; MAERSK EMDEN, 13568; MAERSK ESMERALDAS, 13102; MAERSK LIMA, 8850", "code": "AC2S", "is_kmtc": false}, {"no": 249, "trade": "WCSA", "sector": "FE-WCSA", "alliance": "Maersk", "operators": "Maersk", "service": "Asia-South America West Coast (AC3)", "ships_raw": "11 x 10100", "num_ships": 11, "teu_size": 10100, "port": "Busan New Port", "terminal": "PNC", "rotation": "Shanghai,Qingdao,Busan,Manzanillo (Mexico),Shanghai", "ship_details": "MAERSK SALINA, 9643; GRETE MAERSK, 11078; GUDRUN MAERSK, 11078; SKAGEN MAERSK, 9640; MAERSK YUKON, 10062; MAERSK SALTORO, 9962; SALLY MAERSK, 9640; CHARLOTTE MAERSK, 9640; CLIFFORD MAERSK, 9640; CHASTINE MAERSK, 9640; GUNVOR MAERSK, 11078", "code": "AC3E", "is_kmtc": false}, {"no": 250, "trade": "WCSA", "sector": "FE-WCSA", "alliance": "CMA CGM", "operators": "CMA CGM", "service": "Asia Central South America 1 (ACSA1)", "ships_raw": "12 x 10260", "num_ships": 12, "teu_size": 10260, "port": "Busan New Port", "terminal": "BNCT", "rotation": "Yokohama,Busan,Qingdao,Ningbo,Shanghai,San Antonio,Chancay,Callao,Posorja,Yokohama", "ship_details": "CMA CGM MEKONG, 9971; CMA CGM TAGE, 9365; CMA CGM MISSOURI, 9448; CMA CGM FORT JAMES, 7377; CMA CGM TAGE, 9365; CMA CGM MISSOURI, 9448; CMA CGM THAMES, 9365; CMA CGM KIMBERLEY, 15254; APL SALALAH, 10642; CMA CGM NEVADA, 12917; APL SALALAH, 10642", "code": "ACSAE/ACSAW", "is_kmtc": false}, {"no": 251, "trade": "WCSA", "sector": "FE-WCSA", "alliance": "MSC", "operators": "MSC", "service": "Alpaca", "ships_raw": "10 x 7150", "num_ships": 10, "teu_size": 7150, "port": "Busan New Port", "terminal": "PNIT", "rotation": "Xiamen,Nansha,Busan,Vladivostok,Xiamen", "ship_details": "MSC ANS, 5050; MSC SILVANA VIII, 8400; MSC SHRISTI, 4800; CONTI CHIVALRY, 8073; MSC BRANKA, 9411; MSC DARIEN, 8643; MSC ABUJA VI, 6350; MSC TIANPING, 8533; MSC CONAKRY IV, 4253; MSC MATERA VI, 5936; MSC INES, 9200", "code": "ALPACA", "is_kmtc": false}, {"no": 252, "trade": "WCSA", "sector": "FE-WCSA", "alliance": "ESL / KMTC / RCL / Sinokor / Sinotrans / SeaLead / TSL", "operators": "ESL / KMTC / RCL / Sinokor / Sinotrans / SeaLead / TSL", "service": "Asia-Mexico Mexico Express (AMX)", "ships_raw": "7 x 3270", "num_ships": 7, "teu_size": 3270, "port": "Busan North Port", "terminal": "BPTG", "rotation": "Ningbo,Shanghai,Busan,Niigata,Toyama,Kanazawa,Ulsan,Busan,Kwangyang,Ningbo", "ship_details": "GANTA BHUM, 2826; ESL ASANTE, 3868; LAEM CHABANG VOYAGER, 2782; KMTC NINGBO, 2778; REN JIAN 27, 4395; TS COLOMBO, 2954", "code": "AMX", "is_kmtc": true}, {"no": 253, "trade": "WCSA", "sector": "FE-WCSA", "alliance": "MSC / ONE / Hapag-Lloyd / HMM", "operators": "ONE / Hapag-Lloyd / HMM", "service": "Far East-WCSA Loop 1 (INCA / AX1 / AN1 / NW1)", "ships_raw": "12 x 13260", "num_ships": 12, "teu_size": 13260, "port": "Busan New Port", "terminal": "PNIT", "rotation": "Kwangyang,Busan,Tokyo,Yokohama,Nagoya,Yokkaichi,Busan,Tokyo,Yokohama,Kwangyang", "ship_details": "HMM BLESSING, 11010; MANZANILLO EXPRESS, 13312; ITAJAI EXPRESS, 13312; RIO DE JANEIRO EXPRESS, 13312; BUENAVENTURA EXPRESS, 13312; LIMA EXPRESS, 13280; BUENOS AIRES EXPRESS, 13312; HUMBOLDT EXPRESS, 13280; ONE SINCERITY, 13932; ONE SAPPHIRE, 13932; MONTEVIDEO EXPRESS, 13312; ONE SPHERE, 13828", "code": "AN1", "is_kmtc": false}, {"no": 254, "trade": "WCSA", "sector": "FE-WCSA", "alliance": "MSC / ONE / Hapag-Lloyd / HMM", "operators": "MSC / ONE / Hapag-Lloyd / HMM", "service": "Far East-WCSA Loop 3 (Aztec / AX3 / AME1 / NW3)", "ships_raw": "13 x 11970", "num_ships": 13, "teu_size": 11970, "port": "Busan New Port", "terminal": "PNIT", "rotation": "Busan,Ulsan,Kwangyang,Xingang,Busan", "ship_details": "IQUIQUE EXPRESS, 13280; ONE SPARKLE, 13828; ONE SERENITY, 13932; ONE SHINE, 13932; MSC PROCIDA, 11400; RDO ACE, 10010; ONE ORINOCO, 11923; SEASPAN THAMES, 10010; SEASPAN ZAMBEZI, 10010; POSORJA EXPRESS, 13280; YOKOHAMA EXPRESS, 10010", "code": "AN3E/AN3W", "is_kmtc": false}, {"no": 255, "trade": "WCSA", "sector": "FE-WCSA", "alliance": "COSCO / Evergreen / PIL / Wan Hai", "operators": "PIL / Evergreen / Wan Hai / COSCO", "service": "WSA2 / WS2 / ASA", "ships_raw": "11 x 12280", "num_ships": 11, "teu_size": 12280, "port": "Busan New Port", "terminal": "DGT", "rotation": "Ningbo,Shanghai,Qingdao,Busan,Ensenada,Lazaro Cardenas,Manzanillo (Mexico),Callao,Posorja,Yokohama,Shanghai,Ningbo", "ship_details": "nan", "code": "ASA", "is_kmtc": false}, {"no": 256, "trade": "WCSA", "sector": "FE-WCSA", "alliance": "MSC / ONE / Hapag-Lloyd / HMM", "operators": "MSC / ONE", "service": "Asia-South America Loop 2 (Andes / AX2 / AN2 / NW2)", "ships_raw": "12 x 15850", "num_ships": 12, "teu_size": 15850, "port": "Busan New Port", "terminal": "PNIT", "rotation": "Shanghai,Xiamen,Shekou,Hong Kong,Ningbo,Busan,Manzanillo (Mexico),Lazaro Cardenas,Balboa,Buenaventura,Callao,San Antonio,Lirquen,Coronel,Callao,Manzanillo (Mexico),Lazaro Cardenas,Yokohama,Busan,Shanghai", "ship_details": "MSC NOA ARIELA, 16616; MSC ORSOLA, 16616; MSC VALENTINA, 16616; MSC CANDIDA, 16616; ONE SPIRIT, 13828; MSC VIVIENNE, 16616; ONE SIMPLICITY, 13932; MSC ELENOIRE, 16464; MSC LELLA, 16616; ONE SPLENDOUR, 13828; MSC CHIYO, 16616; MSC VIRGO, 14952; MSC JULIETTE, 16616; MSC VICTORIA, 15934", "code": "ASPA2E/ASPA2W", "is_kmtc": false}, {"no": 257, "trade": "WCSA", "sector": "FE-WCSA", "alliance": "HMM / ONE", "operators": "HMM / ONE", "service": "New West Latin America Service 4 (NW4) / Asia Latin America Express 4 (AX4)", "ships_raw": "10 x 8450", "num_ships": 10, "teu_size": 8450, "port": "Busan New Port", "terminal": "HJNC", "rotation": "Port Klang,Haiphong,Yantian,Ningbo,Shanghai,Busan,Yokohama,Norfolk,Savannah,Charleston,Miami,Port Klang", "ship_details": "HYUNDAI COURAGE, 8566; ONE CONTINUITY, 8110; HMM IVY, 8548; HYUNDAI FORCE, 8566", "code": "AX4", "is_kmtc": false}, {"no": 258, "trade": "WCSA", "sector": "FE-WCSA", "alliance": "CMA CGM / COSCO / Evergreen", "operators": "CMA CGM", "service": "Mexico Express service (M2X) / (WSA6) / (WSA5)", "ships_raw": "12 x 11130", "num_ships": 12, "teu_size": 11130, "port": "Busan New Port", "terminal": "BNCT", "rotation": "Shekou,Ningbo,Shanghai,Xingang,Qingdao,Busan,Manzanillo (Mexico),Lazaro Cardenas,Busan,Shekou", "ship_details": "CMA CGM NINGBO, 7831; CMA CGM G. WASHINGTON, 14402; CMA CGM VELA, 11262; CMA CGM OSMIUM, 13136; CMA CGM ANDROMEDA, 11388; CMA CGM PRIDE, 14806; CMA CGM HELIUM, 13136; HEDWIG SCHULTE, 5605; CMA CGM MERCURY, 13136; APL TURKEY, 6350; CMA CGM THAMES, 9365; CMA CGM MERCURY, 13136", "code": "M2XE/M2XW", "is_kmtc": false}, {"no": 259, "trade": "WCSA", "sector": "FE-WCSA", "alliance": "MSC", "operators": "MSC", "service": "Asia-Mexico West Coast Service (Mexicas)", "ships_raw": "8 x 4830", "num_ships": 8, "teu_size": 4830, "port": "Busan New Port", "terminal": "BCT", "rotation": "Shekou,Ningbo,Shanghai,Qingdao,Busan,Lazaro Cardenias,Manzanillo,Shekou", "ship_details": "MSC MELTEMI III, 2796; MSC CALIDRIS III, 2796; MSC FELIXSTOWE, 5042; MSC MANU IV, 4253; MSC MAGNOLIA V, 4730; MSC TIANPING, 8533; MSC CORNELIA V, 5086; MSC UNITE VI, 5364", "code": "MEXICA", "is_kmtc": false}, {"no": 260, "trade": "WCSA", "sector": "FE-WCSA", "alliance": "CMACGM / COSCO / Hapag-Lloyd", "operators": "CMA CGM", "service": "Pacific East Coast 2 (PEX2) / Caribbean WCSA (CAX1) / Transpacific Latin Caribbean 1 (TLC1) / Joint Caribbean Service (JCS)", "ships_raw": "15 x 13160", "num_ships": 15, "teu_size": 13160, "port": "Busan New Port", "terminal": "BNCT", "rotation": "Singapore,Shekou,Hong Kong,Ningbo,Shanghai,Qingdao,Busan,Manzanillo (Mexico),Balboa,Panama Canal,Manzanillo (Pan),Cartagena (Col),Kingston,Caucedo,Singapore", "ship_details": "CMA CGM BALI, 14812; COSCO HELLAS, 9469; CMA CGM SCANDOLA, 14812; CMA CGM CHILE, 15072; CMA CGM TENERE, 14812; CMA CGM INTEGRITY, 14806; CSCL LONG BEACH, 9580; CMA CGM LIBERTY, 14806; CMA CGM HOPE, 14806; CMA CGM UNITY, 14806; CMA CGM DIGNITY, 14806; OOCL HO CHI MINH CITY, 8888; CSCL ZEEBRUGGE, 9572", "code": "PEX2", "is_kmtc": false}, {"no": 261, "trade": "WCSA", "sector": "FE-WCSA", "alliance": "MSC", "operators": "MSC", "service": "Santana Service", "ships_raw": "14 x 14490", "num_ships": 14, "teu_size": 14490, "port": "Busan New Port", "terminal": "PNIT", "rotation": "Yantian,Ningbo,Shanghai,Qingdao,Busan,Cristobal,Caucedo,Suape,Salvador,Singapore,Yantian", "ship_details": "MSC MARA, 15934; MSC REGULUS, 13102; MSC NATASHA XIII, 13092; MSC KATRINA, 13000; MSC YUKTA X, 9640; MSC SAVONA, 14036; MSC LA SPEZIA, 14036; MSC MARIACRISTINA, 16616; MSC AURIGA, 14952; MSC AAYA, 15264; MSC GRACE, 16000; MSC ORION, 14952; MSC QUITTERIE, 16616; MSC IRIS, 16000; MSC RAVENNA, 14036", "code": "SANTA", "is_kmtc": false}, {"no": 262, "trade": "WCSA", "sector": "FE-WCSA", "alliance": "PIL / YM / WH", "operators": "PIL / YM / WH", "service": "Asia-WCSA (WS6 / AS2 / SA8)", "ships_raw": "12 x 7360", "num_ships": 12, "teu_size": 7360, "port": "Busan New Port", "terminal": "DGT", "rotation": "Ningbo,Shanghai,Qingdao,Busan,Manzanillo (Mexico),Lazaro Cardenas,Puerto Quetzal,Buenaventura,Callao,Valparaiso,Ningbo", "ship_details": "KOTA SANTOS, 8073; WAN HAI 613, 5610; YM ORCHID, 5551; WAN HAI V02, 11923; WAN HAI 512, 4680; KOTA TEMA, 7092; WAN HAI 611, 5610; KOTA MANZANILLO, 8214; YM SUCCESS, 5551; YM FOUNTAIN, 5551; ONE MEISHAN, 13870; KOTA CAHAYA, 6606", "code": "WS6", "is_kmtc": false}, {"no": 263, "trade": "West Africa", "sector": "FE-Africa", "alliance": "MSC", "operators": "MSC", "service": "Africa Express", "ships_raw": "15 x 20540", "num_ships": 15, "teu_size": 20540, "port": "Busan New Port", "terminal": "BCT", "rotation": "Chennai,Kattupalli,Port Klang Northport,Singapore,Pasir Gudang,Kaohsiung,Qingdao,Busan,Shanghai,Shekou,Singapore,Port Klang Westport,Port Klang Northport,Chennai", "ship_details": "MSC APOLLINE, 23782; MSC ISTANBUL, 18500; MSC MICOL, 24346; MSC ELOANE, 19462; MSC NEW YORK, 16652; MSC GULSUN, 23756; MSC OSCAR, 19224; MSC INGY, 19462; MSC NICOLA MASTRO, 24116; MSC IRINA, 24346; MSC MICHELLE, 23936; MSC TINA, 19224; MSC GAIA, 13798; MSC MINA, 23656; MSC IRENE, 13798", "code": "AFRICA", "is_kmtc": false}]
 ;
 
 const TL={China:'中国',Japan:'日本','SE Asia':'東南アジア',USWC:'北米西岸',USEC:'北米東岸',WCSA:'南米西岸',ECSA:'南米東岸','Russia Far East':'ロシア極東',Oceania:'オセアニア',ISC:'インド亜大陸',Med:'地中海','N. Europe':'北欧州',ME:'中近東','E Africa':'東アフリカ','West Africa':'西アフリカ'};
 const TC={China:'#3B82F6',Japan:'#1D4ED8','SE Asia':'#0F766E',USWC:'#D97706',USEC:'#F59E0B',WCSA:'#DC2626',ECSA:'#B91C1C','Russia Far East':'#7C3AED',Oceania:'#0891B2',ISC:'#DB2777',Med:'#059669','N. Europe':'#065F46',ME:'#92400E','E Africa':'#374151','West Africa':'#6B7280'};
-const TCLR=['#0D2D5C','#1D4ED8','#3B82F6','#60A5FA','#93C5FD','#0F766E','#14B8A6','#5EEAD4','#D97706','#F59E0B','#7C3AED','#A78BFA','#DC2626','#F87171','#374151','#6B7280','#9CA3AF'];
-const KG='#15803D';
 
-let cReg,cTerm,cPort,cTeu,cCar,cRD,cRS,cOps,cAl,cT1,cT2,cT3,cKR,cKT;
 let aReg='',tSC=0,tSA=true,lSC=0,lSA=true,tPage=0,lPage=0,tFiltered=[],lFiltered=[];
 const PAGE=50;
 const tabInit={};
+let leafletMap=null,routeLayer=null,portMarkers={};
+let PIDX={};   // port -> [services]
+let destPort='';
+
+/* PORT COORDINATES */
+const PORT_COORDS={
+  'Shanghai':[31.23,121.47],'Ningbo':[29.87,121.55],'Qingdao':[36.07,120.37],
+  'Xingang':[39.00,117.72],'Tianjin':[39.00,117.72],'Shekou':[22.49,113.91],
+  'Yantian':[22.58,114.27],'Chiwan':[22.47,113.88],'Xiamen':[24.48,118.09],
+  'Dalian':[38.91,121.64],'Nansha':[22.74,113.59],'Guangzhou':[23.13,113.26],
+  'Lianyungang':[34.73,119.22],'Rizhao':[35.38,119.52],'Taicang':[31.45,121.10],
+  'Nantong':[32.02,120.87],'Huangpu':[23.10,113.43],'Zhongshan':[22.52,113.39],
+  'Zhuhai':[22.27,113.57],'Shenzhen':[22.54,114.06],'Zhoushan':[30.00,122.11],
+  'Fuzhou':[26.06,119.31],'Quanzhou':[24.88,118.68],'Fangchenggang':[21.61,108.35],
+  'Beihai':[21.48,109.12],'Qinzhou':[21.95,108.60],'Zhanjiang':[21.27,110.40],
+  'Lanshan':[35.07,119.35],'Weihai':[37.51,122.12],'Yantai':[37.55,121.39],
+  'Jinzhou':[41.11,121.12],'Yingkou':[40.67,122.22],'Huizhou':[22.71,114.42],
+  'Zhangzhou':[24.51,117.65],'Nanjing':[32.06,118.79],'Wuhan':[30.59,114.30],
+  'Kwangyang':[34.93,127.68],'Incheon':[37.46,126.71],'Ulsan':[35.54,129.39],
+  'Busan':[35.10,129.04],'Masan':[35.19,128.57],'Pyeongtaek':[36.96,127.06],
+  'Gunsan':[35.98,126.71],'Pohang':[36.01,129.36],'Onsan':[35.45,129.35],
+  'Tokyo':[35.63,139.80],'Yokohama':[35.44,139.64],'Nagoya':[35.08,136.88],
+  'Osaka':[34.65,135.43],'Kobe':[34.68,135.19],'Hakata':[33.60,130.37],
+  'Shimizu':[35.01,138.52],'Moji':[33.94,130.97],'Niigata':[37.94,139.04],
+  'Sendai':[38.27,141.02],'Naha':[26.21,127.67],'Kitakyushu':[33.88,130.88],
+  'Tomakomai':[42.63,141.61],'Kanazawa':[36.62,136.63],'Takamatsu':[34.35,134.04],
+  'Tokushima':[34.07,134.56],'Matsuyama':[33.84,132.77],'Hiroshima':[34.36,132.44],
+  'Muroran':[42.32,140.99],'Sakai':[34.58,135.47],'Ube':[33.94,131.25],
+  'Karatsu':[33.44,129.97],'Sakaide':[34.32,133.84],'Fukuyama':[34.47,133.37],
+  'Oita':[33.24,131.61],'Kagoshima':[31.56,130.56],'Osaka/Kobe':[34.65,135.35],
+  'Iwakuni':[34.17,132.17],'Nachikatsuura':[33.63,135.93],'Anan':[33.90,134.66],
+  'Singapore':[1.29,103.85],'Port Klang':[3.00,101.40],'Penang':[5.42,100.34],
+  'Laem Chabang':[13.09,100.89],'Bangkok':[13.75,100.52],
+  'Ho Chi Minh City':[10.77,106.69],'HCMC':[10.77,106.69],
+  'Haiphong':[20.86,106.68],'Hai Phong':[20.86,106.68],
+  'Cai Mep':[10.53,107.00],'Cat Lai':[10.77,106.73],
+  'Da Nang':[16.07,108.22],'Danang':[16.07,108.22],'Quy Nhon':[13.78,109.22],
+  'Cai Lan':[20.97,107.07],'Cam Pha':[21.01,107.34],
+  'Manila':[14.59,120.97],'Subic Bay':[14.80,120.27],'Cebu':[10.31,123.89],
+  'Davao':[7.07,125.61],'Batangas':[13.75,121.05],'Iloilo':[10.70,122.56],
+  'Jakarta':[-6.11,106.88],'Tanjung Priok':[-6.11,106.88],
+  'Surabaya':[-7.26,112.74],'Belawan':[3.78,98.69],'Semarang':[-7.00,110.42],
+  'Makassar':[-5.15,119.43],'Bitung':[1.45,125.19],'Banjarmasin':[-3.33,114.59],
+  'Port Dickson':[2.52,101.80],'Johor':[1.46,103.70],'Pasir Gudang':[1.47,103.89],
+  'Tanjung Pelepas':[1.36,103.55],'Klang':[3.00,101.40],'Kelang':[3.00,101.40],
+  'Yangon':[16.77,96.16],'Thilawa':[16.62,96.23],'Sihanoukville':[10.63,103.50],
+  'Long Beach':[33.77,-118.22],'Los Angeles':[33.73,-118.26],
+  'Seattle':[47.60,-122.34],'Tacoma':[47.27,-122.41],'Oakland':[37.80,-122.27],
+  'Vancouver':[49.29,-123.11],'Prince Rupert':[54.31,-130.32],
+  'Savannah':[32.08,-81.10],'Norfolk':[36.85,-76.30],'New York':[40.66,-74.00],
+  'Baltimore':[39.27,-76.61],'Charleston':[32.78,-79.94],'Jacksonville':[30.33,-81.66],
+  'Houston':[29.73,-95.27],'New Orleans':[29.94,-90.09],'Miami':[25.77,-80.19],
+  'Philadelphia':[39.95,-75.14],'Boston':[42.35,-71.05],'Montreal':[45.51,-73.55],
+  'Manzanillo':[19.05,-104.32],
+  'Callao':[-12.05,-77.14],'Buenaventura':[3.88,-77.00],'Guayaquil':[-2.24,-79.88],
+  'Iquique':[-20.21,-70.15],'Valparaiso':[-33.04,-71.63],'San Antonio':[-33.60,-71.61],
+  'Arica':[-18.48,-70.33],'Paita':[-5.09,-81.11],
+  'Santos':[-23.94,-46.33],'Buenos Aires':[-34.61,-58.37],
+  'Paranagua':[-25.52,-48.51],'Rio de Janeiro':[-22.90,-43.18],
+  'Itajai':[-26.91,-48.66],'Montevideo':[-34.91,-56.21],
+  'Navegantes':[-26.90,-48.65],'Itaguai':[-22.87,-43.79],
+  'Manaus':[-3.10,-60.03],'Belem':[-1.46,-48.50],'Fortaleza':[-3.72,-38.52],
+  'Pecem':[-3.53,-38.82],'Suape':[-8.41,-34.96],'Rio Grande':[-32.04,-52.10],
+  'Rotterdam':[51.95,4.14],'Hamburg':[53.54,9.99],'Antwerp':[51.22,4.40],
+  'Felixstowe':[51.96,1.34],'Le Havre':[49.49,0.11],'Bremerhaven':[53.55,8.58],
+  'Gothenburg':[57.69,11.97],'Gdansk':[54.37,18.66],'Gdynia':[54.53,18.55],
+  'Aarhus':[56.16,10.20],'Southampton':[50.90,-1.39],'Zeebrugge':[51.34,3.20],
+  'Koper':[45.55,13.73],'Genoa':[44.41,8.93],'Barcelona':[41.38,2.18],
+  'Valencia':[39.45,-0.33],'Algeciras':[36.14,-5.45],'Piraeus':[37.95,23.62],
+  'Istanbul':[41.01,28.96],'Constanta':[44.18,28.65],'Ust-Luga':[59.67,28.45],
+  'Klaipeda':[55.71,21.13],'Tallinn':[59.44,24.75],'Riga':[56.95,24.11],
+  'Oslo':[59.91,10.75],'Helsinki':[60.17,24.94],'Copenhagen':[55.68,12.57],
+  'Dunkirk':[51.04,2.36],'Amsterdam':[52.39,4.91],
+  'Marseille':[43.30,5.37],'Fos':[43.44,4.89],'Naples':[40.85,14.27],
+  'Taranto':[40.47,17.24],'Gioia Tauro':[38.43,15.90],'Livorno':[43.55,10.31],
+  'Leghorn':[43.55,10.31],'Venice':[45.44,12.32],'Ravenna':[44.41,12.20],
+  'Thessaloniki':[40.64,22.94],'Damietta':[31.41,31.81],'Port Said':[31.26,32.30],
+  'Alexandria':[31.20,29.92],'Malta':[35.90,14.51],'Limassol':[34.67,33.05],
+  'Mersin':[36.79,34.63],'Gemlik':[40.43,29.17],'Izmir':[38.43,27.14],
+  'Ambarli':[40.97,28.70],'Lattakia':[35.52,35.78],'Haifa':[32.82,34.99],
+  'Ashdod':[31.80,34.64],'Beirut':[33.88,35.50],'Aqaba':[29.52,35.00],
+  'Jeddah':[21.49,39.17],'Salalah':[17.02,54.07],'Colombo':[6.95,79.85],
+  'Dubai':[25.27,55.30],'Abu Dhabi':[24.47,54.37],'Sharjah':[25.36,55.38],
+  'Muscat':[23.61,58.59],'Kuwait':[29.37,47.97],'Bahrain':[26.22,50.59],
+  'Dammam':[26.43,50.10],'Jubail':[27.01,49.66],'Bandar Abbas':[27.18,56.28],
+  'Sohar':[24.36,56.69],'Khorfakkan':[25.34,56.36],'Khor Fakkan':[25.34,56.36],
+  'Hamad':[24.98,51.59],'Doha':[25.29,51.53],'Oman':[23.61,58.59],
+  'Um Qasr':[30.00,47.93],'Basra':[30.52,47.81],'Bushehr':[28.99,50.83],
+  'Nhava Sheva':[18.95,72.95],'Mumbai':[18.95,72.82],'Chennai':[13.10,80.29],
+  'Tuticorin':[8.77,78.14],'Cochin':[9.97,76.26],'Kolkata':[22.56,88.34],
+  'Haldia':[22.03,88.06],'Visakhapatnam':[17.69,83.28],'Hazira':[21.09,72.64],
+  'Pipavav':[20.91,71.53],'Krishnapatnam':[14.26,80.12],'Kandla':[23.00,70.22],
+  'Mangalore':[12.87,74.84],'Mundra':[22.84,69.72],'Port Qasim':[24.82,67.32],
+  'Karachi':[24.86,66.99],'Chittagong':[22.34,91.83],'Mongla':[22.47,89.60],
+  'Kaohsiung':[22.62,120.30],'Keelung':[25.13,121.74],'Taichung':[24.27,120.52],
+  'Hong Kong':[22.31,114.17],'Kwai Chung':[22.37,114.12],
+  'Sydney':[-33.87,151.21],'Melbourne':[-37.82,144.93],'Brisbane':[-27.47,153.03],
+  'Fremantle':[-32.05,115.74],'Adelaide':[-34.85,138.60],
+  'Auckland':[-36.84,174.77],'Port Kembla':[-34.47,150.90],
+  'Lyttelton':[-43.60,172.72],'Wellington':[-41.28,174.78],'Tauranga':[-37.66,176.17],
+  'Mombasa':[-4.05,39.66],'Dar es Salaam':[-6.82,39.29],'Djibouti':[11.60,43.14],
+  'Aden':[12.78,45.03],'Port Sudan':[19.62,37.22],
+  'Lagos':[6.45,3.41],'Abidjan':[5.35,-4.00],'Tema':[5.63,-0.02],
+  'Dakar':[14.69,-17.44],'Lome':[6.14,1.22],'Cotonou':[6.36,2.43],
+  'Douala':[4.05,9.70],'Luanda':[-8.83,13.23],'Pointe Noire':[-4.77,11.86],
+  'Durban':[-29.87,31.03],'Toamasina':[-18.15,49.40],
+  'Nacala':[-14.54,40.67],'Beira':[-19.83,34.84],
+  'Vladivostok':[43.12,131.89],'Vostochny':[42.77,133.08],'Vostochy':[42.77,133.08],
+  'Nakhodka':[42.82,132.89],'Zarubino':[42.65,130.77],
+  'Kingston':[17.99,-76.79],'Caucedo':[18.44,-69.61],'Cartagena':[10.40,-75.52],
+  'Panama':[8.99,-79.52],'Colon':[9.36,-79.90],'Balboa':[8.96,-79.57],
+  'Puerto Cortes':[15.84,-87.95],'Altamira':[22.40,-97.92],
+  'Veracruz':[19.19,-96.14],'Lazaro Cardenas':[17.91,-102.17],
+  'Ensenada':[31.86,-116.61],'Port of Spain':[10.65,-61.52],
+  'Imbituba':[-28.24,-48.67],'Itaguai':[-22.87,-43.79],
+  'San Vicente':[-36.76,-73.13],'Coronel':[-37.02,-73.14],
+  'Antofagasta':[-23.65,-70.40],'Mejillones':[-23.10,-70.46],
+  'Matarani':[-17.00,-72.11]
+};
+
+function getCoords(p){
+  if(PORT_COORDS[p])return PORT_COORDS[p];
+  const lo=p.toLowerCase();
+  for(const[k,v]of Object.entries(PORT_COORDS)){if(k.toLowerCase()===lo)return v;}
+  return null;
+}
+
+const BUSAN_SET=new Set(['Busan','Busan New Port','Busan North Port','BUSAN','Busan (New Port)','Busan (North Port)','BNCT','Gamman','Sinseondae','Hutchison','PNC','HPNT','BPTS','BCE']);
+
+function buildPortIndex(){
+  PIDX={};
+  DATA.forEach(d=>{
+    if(!d.rotation)return;
+    d.rotation.split(',').forEach(p=>{
+      p=p.trim();
+      if(!p)return;
+      const isB=BUSAN_SET.has(p)||p.toLowerCase().startsWith('busan');
+      if(isB)return;
+      if(!PIDX[p])PIDX[p]=[];
+      PIDX[p].push(d);
+    });
+  });
+}
 
 function initDB(){
   if(tabInit._b)return; tabInit._b=true;
-  buildFilters(); applyFilters();
+  buildPortIndex();
+  buildFilters();
+  applyFilters();
 }
 
 function buildFilters(){
@@ -527,46 +697,39 @@ function applyFilters(){
   $('kv-regions').textContent=rg;
   $('kv-maxteu').textContent=mx.toLocaleString();
   $('result-count').innerHTML='表示中: <strong>'+f.length+'</strong> サービス（全263件中）';
-  drawTopCharts(f); tPage=0; renderTopTable(f);
+  renderTopRegionTable(f);
+  tPage=0; renderTopTable(f);
 }
 function $(id){return document.getElementById(id);}
 
-/* ── CHARTS ── */
-const NA={animation:false};
-function mkChart(id,type,labels,datasets,opts){
-  const el=$(id); if(!el)return null;
-  const existing=Chart.getChart(el); if(existing)existing.destroy();
-  return new Chart(el,{type,data:{labels,datasets},options:{...NA,responsive:true,maintainAspectRatio:false,...opts}});
+/* TOP region table */
+function renderTopRegionTable(data){
+  const trc={},trsh={},trk={},tral={};
+  const maxC=Math.max(...[...new Set(data.map(d=>d.trade))].map(t=>data.filter(d2=>d2.trade===t).length),1);
+  data.forEach(d=>{
+    trc[d.trade]=(trc[d.trade]||0)+1;
+    trsh[d.trade]=(trsh[d.trade]||0)+d.num_ships;
+    if(d.is_kmtc)trk[d.trade]=(trk[d.trade]||0)+1;
+    if(!tral[d.trade])tral[d.trade]={};
+    if(d.alliance)tral[d.trade][d.alliance]=(tral[d.trade][d.alliance]||0)+1;
+  });
+  const K=Object.keys(trc).sort((a,b)=>trc[b]-trc[a]);
+  const mx=Math.max(...Object.values(trc),1);
+  $('top-region-tbody').innerHTML=K.map(tr=>{
+    const topAl=Object.entries(tral[tr]||{}).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k])=>k).join(', ');
+    const pct=Math.round(trc[tr]/mx*100);
+    return`<tr>
+      <td><span class="trade-tag" style="background:${TC[tr]||'#94A3B8'}22;color:${TC[tr]||'#334155'}">${TL[tr]||tr}</span></td>
+      <td style="font-weight:700;color:#0D2D5C">${trc[tr]}</td>
+      <td><div class="prog-wrap"><div class="prog-bg"><div class="prog-fill" style="width:${pct}%"></div></div><span class="prog-val">${trc[tr]}</span></div></td>
+      <td>${trsh[tr]||0}</td>
+      <td>${trk[tr]?`<span style="color:#15803D;font-weight:700">${trk[tr]}</span>`:'-'}</td>
+      <td style="font-size:10px;color:#64748B">${topAl||'-'}</td>
+    </tr>`;
+  }).join('');
 }
 
-function drawTopCharts(data){
-  const trc={}; data.forEach(d=>{trc[d.trade]=(trc[d.trade]||0)+1;});
-  const trK=Object.keys(trc).sort((a,b)=>trc[b]-trc[a]);
-  cReg=mkChart('cRegion','bar',trK.map(k=>TL[k]||k),[{data:trK.map(k=>trc[k]),backgroundColor:trK.map(k=>TC[k]||'#94A3B8'),borderRadius:3}],
-    {indexAxis:'y',plugins:{legend:{display:false},datalabels:{display:false}},scales:{x:{grid:{color:'#F5F5F5'},ticks:{font:{size:10}}},y:{ticks:{font:{size:10}}}}});
-
-  const tc={}; data.forEach(d=>{d.terminal.split('/').forEach(t=>{t=t.trim();if(t)tc[t]=(tc[t]||0)+1;});});
-  const tkK=Object.keys(tc).sort((a,b)=>tc[b]-tc[a]);
-  cTerm=mkChart('cTerminal','doughnut',tkK,[{data:tkK.map(k=>tc[k]),backgroundColor:TCLR,borderWidth:2,borderColor:'#fff'}],
-    {cutout:'60%',plugins:{legend:{position:'right',labels:{font:{size:9},boxWidth:10,padding:4}},datalabels:{display:false}}});
-
-  const pc={'Busan New Port':0,'Busan North Port':0,'Both':0};
-  data.forEach(d=>{if(pc[d.port]!==undefined)pc[d.port]++;else pc['Both']++;});
-  cPort=mkChart('cPort','doughnut',['新港','北港','両方'],[{data:[pc['Busan New Port'],pc['Busan North Port'],pc['Both']],backgroundColor:['#0D2D5C','#0F766E','#F0A500'],borderWidth:2,borderColor:'#fff'}],
-    {cutout:'58%',plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}},datalabels:{display:false}}});
-
-  const tb={'〜1,000':0,'1,001〜2,000':0,'2,001〜5,000':0,'5,001〜10,000':0,'10,001〜':0};
-  data.forEach(d=>{const t=d.teu_size;if(t<=1000)tb['〜1,000']++;else if(t<=2000)tb['1,001〜2,000']++;else if(t<=5000)tb['2,001〜5,000']++;else if(t<=10000)tb['5,001〜10,000']++;else tb['10,001〜']++;});
-  cTeu=mkChart('cTeu','doughnut',Object.keys(tb),[{data:Object.values(tb),backgroundColor:['#BFDBFE','#60A5FA','#3B82F6','#1D4ED8','#0D2D5C'],borderWidth:2,borderColor:'#fff'}],
-    {cutout:'58%',plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:12}},datalabels:{display:false}}});
-
-  const oc={}; data.forEach(d=>{if(d.operators)oc[d.operators]=(oc[d.operators]||0)+1;});
-  const ot=Object.entries(oc).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  cCar=mkChart('cCarrier','bar',ot.map(([k])=>k.length>20?k.slice(0,20)+'…':k),[{data:ot.map(([,v])=>v),backgroundColor:ot.map(([k])=>k.includes('KMTC')?KG:'#93C5FD'),borderRadius:3}],
-    {indexAxis:'y',plugins:{legend:{display:false},datalabels:{display:false}},scales:{x:{ticks:{font:{size:9}}},y:{ticks:{font:{size:9}}}}});
-}
-
-/* ── TOP TABLE ── */
+/* TOP TABLE */
 function ttag(trade){return'<span class="trade-tag" style="background:'+(TC[trade]||'#94A3B8')+'22;color:'+(TC[trade]||'#334155')+'">'+(TL[trade]||trade)+'</span>';}
 function makeRot(rot){if(!rot)return'';return rot.split(',').map(p=>{p=p.trim();const b=p.toLowerCase().includes('busan');return'<span class="rot-port'+(b?' busan':'')+'">'+p+'</span>';}).join('');}
 function progBar(val,max,cls=''){const pct=max>0?Math.round(val/max*100):0;return'<div class="prog-wrap"><div class="prog-bg"><div class="prog-fill'+cls+'" style="width:'+pct+'%"></div></div><span class="prog-val">'+val+'</span></div>';}
@@ -594,24 +757,111 @@ function renderTopPage(){
   $('top-pagination').innerHTML=pages<=1?'':
     `<div class="pagination">
       <button class="pill${tPage===0?' on':''}" onclick="goTP(0)">最初</button>
-      <button class="pill" onclick="goTP(Math.max(0,tPage-1))" ${tPage===0?'disabled':''}>◀</button>
+      <button class="pill" onclick="goTP(Math.max(0,tPage-1))"${tPage===0?' disabled':''}>◀</button>
       <span><strong>${s+1}〜${e}</strong> / ${total}件</span>
-      <button class="pill" onclick="goTP(Math.min(${pages-1},tPage+1))" ${tPage>=pages-1?'disabled':''}>▶</button>
+      <button class="pill" onclick="goTP(Math.min(${pages-1},tPage+1))"${tPage>=pages-1?' disabled':''}>▶</button>
       <button class="pill${tPage===pages-1?' on':''}" onclick="goTP(${pages-1})">最後</button>
     </div>`;
 }
 function goTP(p){tPage=p;renderTopPage();}
 
-/* ── REGION TAB ── */
-function renderRegion(){
-  const trc={},trs={};
-  DATA.forEach(d=>{trc[d.trade]=(trc[d.trade]||0)+1;trs[d.trade]=(trs[d.trade]||0)+d.num_ships;});
-  const K=Object.keys(trc).sort((a,b)=>trc[b]-trc[a]);
-  const L=K.map(k=>TL[k]||k),C=K.map(k=>TC[k]||'#94A3B8');
-  const bOpt={indexAxis:'y',plugins:{legend:{display:false},datalabels:{display:false}},scales:{x:{ticks:{font:{size:10}}},y:{ticks:{font:{size:10}}}}};
-  cRD=mkChart('cRegionD','bar',L,[{label:'サービス数',data:K.map(k=>trc[k]),backgroundColor:C,borderRadius:3}],bOpt);
-  cRS=mkChart('cRegionS','bar',L,[{label:'投入隻数',data:K.map(k=>trs[k]),backgroundColor:C,borderRadius:3}],bOpt);
+/* DEST TAB */
+function renderDest(){
+  const portsSorted=Object.entries(PIDX).sort((a,b)=>b[1].length-a[1].length);
+  const chips=$('dest-chips');
+  chips.innerHTML='';
+  portsSorted.forEach(([port,svcs])=>{
+    const c=document.createElement('button');
+    c.className='dest-chip'+(destPort===port?' active':'');
+    c.dataset.port=port;
+    c.innerHTML=port+'<span class="cnt">'+svcs.length+'</span>';
+    c.onclick=()=>selectDestPort(port);
+    chips.appendChild(c);
+  });
+  if(destPort)renderDestResult(destPort);
+}
 
+function filterDestChips(){
+  const q=($('dest-search').value||'').toLowerCase().trim();
+  document.querySelectorAll('.dest-chip').forEach(c=>{
+    const port=c.dataset.port||'';
+    c.style.display=(!q||port.toLowerCase().includes(q))?'':'none';
+  });
+}
+
+function selectDestPort(port){
+  destPort=port;
+  document.querySelectorAll('.dest-chip').forEach(c=>{
+    c.className='dest-chip'+(c.dataset.port===port?' active':'');
+  });
+  renderDestResult(port);
+}
+
+let dSC=0,dSA=true;
+function sortDest(c){if(dSC===c)dSA=!dSA;else{dSC=c;dSA=true;}renderDestResult(destPort);}
+
+function renderDestResult(port){
+  const svcs=PIDX[port]||[];
+  if(!svcs.length){$('dest-result').innerHTML='<div style="color:#94A3B8;padding:20px">データなし</div>';return;}
+  const K=['trade','operators','alliance','service','ships_raw','num_ships','rotation','terminal'];
+  const sorted=[...svcs].sort((a,b)=>{
+    let va=a[K[dSC]]||'',vb=b[K[dSC]]||'';
+    return typeof va==='number'?(dSA?va-vb:vb-va):(dSA?String(va).localeCompare(String(vb)):String(vb).localeCompare(String(va)));
+  });
+  const kmtcN=svcs.filter(d=>d.is_kmtc).length;
+  const html=`
+    <div class="dest-selected-header">
+      <div>
+        <div class="dest-selected-port">${port}</div>
+        <div class="dest-selected-meta">週 <strong>${svcs.length}</strong> 便 ｜ ${kmtcN?`うちKMTC <strong>${kmtcN}</strong> 便 ｜`:''} 船社 <strong>${new Set(svcs.map(d=>d.operators)).size}</strong> 社</div>
+      </div>
+      <button class="pill" onclick="showPortOnMap('${port.replace(/'/g,"\\'")}')">🗺 地図で見る</button>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th onclick="sortDest(0)">地域</th>
+          <th onclick="sortDest(1)">船社</th>
+          <th onclick="sortDest(2)">Alliance</th>
+          <th onclick="sortDest(3)">サービス名</th>
+          <th onclick="sortDest(4)">隻数×TEU</th>
+          <th>週便数</th>
+          <th onclick="sortDest(6)">Port Rotation</th>
+          <th onclick="sortDest(7)">BUSANターミナル</th>
+        </tr></thead>
+        <tbody>
+          ${sorted.map(d=>`<tr class="${d.is_kmtc?'r-kmtc':''}">
+            <td>${ttag(d.trade)}</td>
+            <td style="font-weight:${d.is_kmtc?700:400};font-size:11px">${d.operators}${d.is_kmtc?'<span class="kmtc-mk">KMTC</span>':''}</td>
+            <td style="font-size:10px">${d.alliance}</td>
+            <td style="font-size:11px">${d.service}</td>
+            <td style="font-weight:700;color:#0D2D5C;white-space:nowrap">${d.ships_raw}</td>
+            <td style="font-weight:700;color:#0F766E">週1便</td>
+            <td>${makeRot(d.rotation)}</td>
+            <td style="font-size:10px;font-weight:600">${d.terminal}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  $('dest-result').innerHTML=html;
+}
+
+function showPortOnMap(port){
+  const btn=document.querySelector('.top-tab.tab-map');
+  sw('pmap',btn);
+  setTimeout(()=>{
+    if(portMarkers[port]){
+      portMarkers[port].fire('click');
+      leafletMap.setView(portMarkers[port].getLatLng(),5);
+    }
+  },400);
+}
+
+/* REGION TAB */
+function renderRegion(){
+  const trc={};
+  DATA.forEach(d=>{trc[d.trade]=(trc[d.trade]||0)+1;});
+  const K=Object.keys(trc).sort((a,b)=>trc[b]-trc[a]);
   const maxS=Math.max(...K.map(k=>trc[k]));
   let html='';
   K.forEach(tr=>{
@@ -639,16 +889,33 @@ function renderRegion(){
   $('region-tables').innerHTML=html;
 }
 
-/* ── CARRIER TAB ── */
+/* CARRIER TAB */
 function renderCarrier(){
   const oc={},ac={};
   DATA.forEach(d=>{if(d.operators)oc[d.operators]=(oc[d.operators]||0)+1;if(d.alliance)ac[d.alliance]=(ac[d.alliance]||0)+1;});
-  const ot=Object.entries(oc).sort((a,b)=>b[1]-a[1]).slice(0,15);
-  const at=Object.entries(ac).sort((a,b)=>b[1]-a[1]).slice(0,15);
-  const bOpt={indexAxis:'y',plugins:{legend:{display:false},datalabels:{display:false}},scales:{x:{ticks:{font:{size:9}}},y:{ticks:{font:{size:9}}}}};
-  cOps=mkChart('cOps','bar',ot.map(([k])=>k.length>24?k.slice(0,24)+'…':k),[{data:ot.map(([,v])=>v),backgroundColor:ot.map(([k])=>k.includes('KMTC')?KG:'#60A5FA'),borderRadius:3}],bOpt);
-  cAl=mkChart('cAlliance','bar',at.map(([k])=>k.length>24?k.slice(0,24)+'…':k),[{data:at.map(([,v])=>v),backgroundColor:at.map(([k])=>k.includes('KMTC')?KG:'#3B82F6'),borderRadius:3}],bOpt);
-  const maxC=Math.max(...Object.values(oc));
+  const maxC=Math.max(...Object.values(oc),1);
+  const maxA=Math.max(...Object.values(ac),1);
+
+  // Summary cards
+  const topOps=Object.entries(oc).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const topAl=Object.entries(ac).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  $('carrier-summary').innerHTML=`
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title"><span class="badge">Operators Top5</span></div>
+      ${topOps.map(([k,v])=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="font-size:11px;font-weight:600;min-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${k}${k.includes('KMTC')?'<span class="kmtc-mk">KMTC</span>':''}</span>
+        ${progBar(v,maxC,k.includes('KMTC')?' g':'')}
+      </div>`).join('')}
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title"><span class="badge">Alliance Top5</span></div>
+      ${topAl.map(([k,v])=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="font-size:11px;font-weight:600;min-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${k}</span>
+        ${progBar(v,maxA)}
+      </div>`).join('')}
+    </div>`;
+
+  // Full table
   let html=`<div class="tbl-wrap"><table><thead><tr><th>Operators</th><th>サービス数</th><th style="min-width:120px">割合</th><th>投入隻数</th><th>展開地域</th></tr></thead><tbody>`;
   Object.entries(oc).sort((a,b)=>b[1]-a[1]).forEach(([op,cnt])=>{
     const svcs=DATA.filter(d=>d.operators===op);
@@ -657,32 +924,44 @@ function renderCarrier(){
     const ik=op.includes('KMTC');
     html+=`<tr class="${ik?'r-kmtc':''}"><td>${op}${ik?'<span class="kmtc-mk">KMTC</span>':''}</td>
       <td style="font-weight:700;color:#0D2D5C">${cnt}</td>
-      <td>${progBar(cnt,maxC)}</td>
-      <td>${ships}</td>
+      <td>${progBar(cnt,maxC)}</td><td>${ships}</td>
       <td style="font-size:10px;color:#64748B">${trs}</td></tr>`;
   });
   html+='</tbody></table></div>';
   $('carrier-tbl').innerHTML=html;
 }
 
-/* ── TERMINAL TAB ── */
+/* TERMINAL TAB */
 function renderTerminal(){
   const ts={},tsh={};
   DATA.forEach(d=>{d.terminal.split('/').forEach(t=>{t=t.trim();if(!t)return;ts[t]=(ts[t]||0)+1;tsh[t]=(tsh[t]||0)+d.num_ships;});});
   const K=Object.keys(ts).sort((a,b)=>ts[b]-ts[a]);
-  const bOpt={indexAxis:'y',plugins:{legend:{display:false},datalabels:{display:false}},scales:{x:{ticks:{font:{size:9}}},y:{ticks:{font:{size:9}}}}};
-  cT1=mkChart('cT1','doughnut',K,[{data:K.map(k=>ts[k]),backgroundColor:TCLR,borderWidth:2,borderColor:'#fff'}],
-    {cutout:'55%',plugins:{legend:{position:'right',labels:{font:{size:9},boxWidth:10,padding:4}},datalabels:{display:false}}});
-  cT2=mkChart('cT2','bar',K,[{data:K.map(k=>tsh[k]),backgroundColor:TCLR,borderRadius:3}],bOpt);
-  const pc={},psh={};DATA.forEach(d=>{pc[d.port]=(pc[d.port]||0)+1;psh[d.port]=(psh[d.port]||0)+d.num_ships;});
-  cT3=mkChart('cT3','bar',['サービス数','投入隻数(÷10)'],[
-    {label:'新港',data:[pc['Busan New Port']||0,Math.round((psh['Busan New Port']||0)/10)],backgroundColor:'#0D2D5C',borderRadius:3},
-    {label:'北港',data:[pc['Busan North Port']||0,Math.round((psh['Busan North Port']||0)/10)],backgroundColor:'#0F766E',borderRadius:3},
-    {label:'Both',data:[pc['Both']||0,Math.round((psh['Both']||0)/10)],backgroundColor:'#F0A500',borderRadius:3}
-  ],{plugins:{legend:{position:'bottom',labels:{font:{size:10}}},datalabels:{display:false}},scales:{x:{},y:{ticks:{font:{size:10}}}}});
+  const maxT=Math.max(...K.map(k=>ts[k]),1);
 
-  const maxT=Math.max(...K.map(k=>ts[k]));
-  let html=`<div class="tbl-wrap"><table><thead><tr><th>ターミナル</th><th>サービス数</th><th style="min-width:110px">割合</th><th>投入隻数</th><th>主要地域</th></tr></thead><tbody>`;
+  const pc={},psh={};
+  DATA.forEach(d=>{pc[d.port]=(pc[d.port]||0)+1;psh[d.port]=(psh[d.port]||0)+d.num_ships;});
+
+  let html=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      <div class="card" style="margin-bottom:0">
+        <div class="card-title"><span class="badge">ターミナル別サービス数</span></div>
+        ${K.map(t=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+          <span style="font-size:11px;font-weight:600;min-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t}</span>
+          ${progBar(ts[t],maxT)}
+        </div>`).join('')}
+      </div>
+      <div class="card" style="margin-bottom:0">
+        <div class="card-title"><span class="badge">北港 vs 新港</span></div>
+        ${Object.entries(pc).map(([p,c])=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+          <span style="font-size:11px;font-weight:600;min-width:120px">${p}</span>
+          <span style="font-weight:700;color:#0D2D5C">${c}件</span>
+          <span style="font-size:10px;color:#64748B">${psh[p]}隻</span>
+        </div>`).join('')}
+      </div>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>ターミナル</th><th>サービス数</th><th style="min-width:110px">割合</th><th>投入隻数</th><th>主要地域</th></tr></thead>
+      <tbody>`;
   K.forEach(term=>{
     const svcs=DATA.filter(d=>d.terminal.includes(term));
     const ships=svcs.reduce((s,d)=>s+d.num_ships,0);
@@ -693,23 +972,33 @@ function renderTerminal(){
   $('terminal-tbl').innerHTML=html;
 }
 
-/* ── KMTC TAB ── */
+/* KMTC TAB */
 function renderKmtc(){
   const kd=DATA.filter(d=>d.is_kmtc);
   const ships=kd.reduce((s,d)=>s+d.num_ships,0);
   const regions=new Set(kd.map(d=>d.trade)).size;
-  const maxT=Math.max(...kd.map(d=>d.teu_size));
+  const maxT=kd.length?Math.max(...kd.map(d=>d.teu_size)):0;
+  $('kk-total').textContent=kd.length;
   $('kk-ships').textContent=ships.toLocaleString();
   $('kk-regions').textContent=regions;
   $('kk-maxteu').textContent=maxT.toLocaleString();
-  const kr={};kd.forEach(d=>{kr[d.trade]=(kr[d.trade]||0)+1;});
-  const krK=Object.keys(kr).sort((a,b)=>kr[b]-kr[a]);
-  cKR=mkChart('cKR','bar',krK.map(k=>TL[k]||k),[{data:krK.map(k=>kr[k]),backgroundColor:KG,borderRadius:3}],
-    {indexAxis:'y',plugins:{legend:{display:false},datalabels:{display:false}},scales:{x:{ticks:{font:{size:10}}},y:{ticks:{font:{size:10}}}}});
-  const kt={};kd.forEach(d=>{d.terminal.split('/').forEach(t=>{t=t.trim();if(t)kt[t]=(kt[t]||0)+1;});});
-  const ktK=Object.keys(kt).sort((a,b)=>kt[b]-kt[a]);
-  cKT=mkChart('cKT','doughnut',ktK,[{data:ktK.map(k=>kt[k]),backgroundColor:['#064E3B','#15803D','#16A34A','#22C55E','#4ADE80','#86EFAC','#BBF7D0'],borderWidth:2,borderColor:'#fff'}],
-    {cutout:'55%',plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:12}},datalabels:{display:false}}});
+  $('kmtc-count-label').textContent=kd.length+'件';
+
+  // Region breakdown
+  const kr={},krsh={};
+  kd.forEach(d=>{kr[d.trade]=(kr[d.trade]||0)+1;krsh[d.trade]=(krsh[d.trade]||0)+d.num_ships;});
+  const maxK=Math.max(...Object.values(kr),1);
+  $('kmtc-region-tbody').innerHTML=Object.entries(kr).sort((a,b)=>b[1]-a[1]).map(([tr,cnt])=>{
+    const svcs=kd.filter(d=>d.trade===tr).slice(0,3).map(d=>d.service).join(', ');
+    return`<tr>
+      <td><span class="trade-tag" style="background:${TC[tr]||'#94A3B8'}22;color:${TC[tr]||'#334155'}">${TL[tr]||tr}</span></td>
+      <td style="font-weight:700;color:#15803D">${cnt}</td>
+      <td>${progBar(cnt,maxK,' g')}</td>
+      <td>${krsh[tr]||0}</td>
+      <td style="font-size:10px;color:#64748B">${svcs}</td>
+    </tr>`;
+  }).join('');
+
   $('kmtc-tbody').innerHTML=kd.map(d=>`<tr class="r-kmtc">
     <td>${ttag(d.trade)}</td>
     <td style="font-size:10px;color:#64748B">${d.sector}</td>
@@ -723,7 +1012,7 @@ function renderKmtc(){
   </tr>`).join('');
 }
 
-/* ── LIST ── */
+/* LIST */
 function sortList(c){if(lSC===c)lSA=!lSA;else{lSC=c;lSA=true;}lPage=0;renderList();}
 function goLP(p){lPage=p;renderListPage();}
 function renderList(){
@@ -763,27 +1052,103 @@ function renderListPage(){
   $('list-pagination').innerHTML=pages<=1?'':
     `<div class="pagination">
       <button class="pill${lPage===0?' on':''}" onclick="goLP(0)">最初</button>
-      <button class="pill" onclick="goLP(Math.max(0,lPage-1))" ${lPage===0?'disabled':''}>◀</button>
+      <button class="pill" onclick="goLP(Math.max(0,lPage-1))"${lPage===0?' disabled':''}>◀</button>
       <span><strong>${s+1}〜${e}</strong> / ${total}件</span>
-      <button class="pill" onclick="goLP(Math.min(${pages-1},lPage+1))" ${lPage>=pages-1?'disabled':''}>▶</button>
+      <button class="pill" onclick="goLP(Math.min(${pages-1},lPage+1))"${lPage>=pages-1?' disabled':''}>▶</button>
       <button class="pill${lPage===pages-1?' on':''}" onclick="goLP(${pages-1})">最後</button>
     </div>`;
 }
 
-/* ── TAB SWITCH ── */
+/* MAP */
+function initLeaflet(){
+  if(leafletMap)return;
+  leafletMap=L.map('leaflet-map',{center:[25,115],zoom:3,zoomControl:true});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© OpenStreetMap contributors',maxZoom:18
+  }).addTo(leafletMap);
+
+  // Build port service counts
+  const portCounts={};
+  Object.entries(PIDX).forEach(([port,svcs])=>{portCounts[port]=svcs.length;});
+
+  // Add Busan marker (special)
+  const busanMk=L.circleMarker([35.10,129.04],{radius:14,fillColor:'#F0A500',color:'#0D2D5C',weight:2,fillOpacity:0.95}).addTo(leafletMap);
+  busanMk.bindTooltip('<strong>BUSAN</strong><br>出発港（263サービス）',{permanent:false,className:'leaflet-tooltip'});
+
+  // Add destination port markers
+  portMarkers={};
+  Object.entries(portCounts).forEach(([port,cnt])=>{
+    const coords=getCoords(port);
+    if(!coords)return;
+    const r=Math.max(5,Math.min(18,4+Math.sqrt(cnt)*1.8));
+    const svcs=PIDX[port]||[];
+    const hasKmtc=svcs.some(d=>d.is_kmtc);
+    const mk=L.circleMarker(coords,{
+      radius:r,
+      fillColor:hasKmtc?'#15803D':'#1D4ED8',
+      color:'#fff',weight:1.5,fillOpacity:0.75
+    }).addTo(leafletMap);
+    mk.bindTooltip(`<strong>${port}</strong><br>週${cnt}便${hasKmtc?' ★KMTC':''}`,{permanent:false});
+    mk.on('click',()=>showMapPortSidebar(port));
+    portMarkers[port]=mk;
+  });
+}
+
+let activeMapSvc=null;
+function showMapPortSidebar(port){
+  const svcs=PIDX[port]||[];
+  $('map-sidebar-title').textContent=port;
+  $('map-sidebar-sub').textContent=`週${svcs.length}便 ｜ ${new Set(svcs.map(d=>d.operators)).size}船社`;
+
+  $('map-sidebar-body').innerHTML=svcs.map((d,i)=>`
+    <div class="map-svc-item" id="msvc${i}" onclick="selectMapSvc(${i},'${port.replace(/'/g,"\\'")}')">
+      <div class="map-svc-name">${d.service}</div>
+      <div class="map-svc-op">${d.operators}${d.is_kmtc?'<span class="kmtc-mk" style="margin-left:4px">KMTC</span>':''}</div>
+      <div class="map-svc-ships">${d.ships_raw}</div>
+    </div>`).join('');
+  activeMapSvc=null;
+}
+
+function selectMapSvc(idx,port){
+  document.querySelectorAll('.map-svc-item').forEach(el=>el.classList.remove('active'));
+  const el=document.getElementById('msvc'+idx);
+  if(el)el.classList.add('active');
+
+  const svc=(PIDX[port]||[])[idx];
+  if(!svc)return;
+  drawRoute(svc);
+}
+
+function drawRoute(svc){
+  if(routeLayer){leafletMap.removeLayer(routeLayer);routeLayer=null;}
+  if(!svc.rotation)return;
+  const ports=svc.rotation.split(',').map(p=>p.trim()).filter(Boolean);
+  const coords=[];
+  ports.forEach(p=>{const c=getCoords(p);if(c)coords.push(c);});
+  if(coords.length<2)return;
+  routeLayer=L.polyline(coords,{color:'#F0A500',weight:2.5,opacity:0.85,dashArray:'6,4'}).addTo(leafletMap);
+  leafletMap.fitBounds(routeLayer.getBounds(),{padding:[30,30]});
+}
+
+/* TAB SWITCH */
 function sw(id,btn){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   $(id).classList.add('active');
   document.querySelectorAll('.top-tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+  // Hide filter bar for map tab
+  const fb=$('filter-bar');
+  if(fb)fb.style.display=(id==='pmap')?'none':'';
+  if(id==='pdest'&&!tabInit.d){tabInit.d=true;renderDest();}
   if(id==='pregion'&&!tabInit.r){tabInit.r=true;renderRegion();}
   if(id==='pcarrier'&&!tabInit.c){tabInit.c=true;renderCarrier();}
   if(id==='pterminal'&&!tabInit.t){tabInit.t=true;renderTerminal();}
   if(id==='pkmtc'&&!tabInit.k){tabInit.k=true;renderKmtc();}
+  if(id==='pmap'&&!tabInit.m){tabInit.m=true;setTimeout(initLeaflet,100);}
   if(id==='plist'&&!tabInit.l){tabInit.l=true;renderList();}
 }
 
-/* ── SIZE TOGGLE ── */
+/* SIZE */
 function setSz(sz,btn){
   document.body.className=sz==='m'?'':('sz-'+sz);
   document.querySelectorAll('.sz-btn').forEach(b=>b.classList.remove('on'));
